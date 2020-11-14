@@ -4,6 +4,7 @@ import time
 from csv import reader
 import pandas as pd
 import numpy as np
+from random import randint
 
 
 class Sensor:
@@ -30,19 +31,19 @@ class Sensor:
         """
 
         # Streaming data from CSV to simulate sensor reading
-        with open("pressuretestdata.csv", 'rU') as f:
-            tempdata = [list(map(int, rec)) for rec in
-                        reader(f, delimiter=',')]
+        # with open("pressuretestdata.csv", 'rU') as f:
+        #     tempdata = [list(map(int, rec)) for rec in
+        #                 reader(f, delimiter=',')]
 
         # Recording sensor time
         t = time.process_time()
-        print(t)
+        # print(t)
         # Placing sensor data into numpy array
-        temps = [t, tempdata[0][0], tempdata[0][1], tempdata[0][2]]
+        temps = [t, randint(1, 20), randint(1, 20), randint(1, 20)]
 
         # Appending numpy array to data list
         self.data.append(temps)
-        print(self.data)
+        # print(self.data)
 
         # fetching voted average
         avg = self.vote(temps[1::])

@@ -34,22 +34,24 @@ app.layout = html.Div([
     html.Button('Save', id='savebutton', n_clicks=0),
     html.Div(id='pressure_data'),
     html.Div(id='save_data'),
-    dcc.Graph(id='graph', figure=fig)
+    dcc.Graph(id='graph', figure=fig, animate=True),
+    dcc.Interval(id='interval-component',
+                 interval=0.5*1000,
+                 n_intervals=0)
 ])
 
 
 @app.callback(
     [Output(component_id='pressure_data', component_property='children'),
-     Output(component_id='graph', component_property='figure')],
-    [Input(component_id='readbutton', component_property='n_clicks')])
+     Output(component_id='graph', component_property='extendData')],
+    [Input(component_id='interval-component', component_property='n_intervals')])
 def update_pressure_data(n_clicks):
     t = time.process_time()
     vals = pressure_test.read_pressure()
     x.append(t)
     y.append(vals)
-    data = [dict(x=x, y=y, type='scatter', mode='lines+markers')]
-    fig1 = dict(data=data, layout=layout)
-    return 'Output: {}'.format(vals), fig1
+    data = (dict(x=[[t]], y=[[vals]]))
+    return 'Output: {}'.format(vals), data
 
 
 @app.callback(
