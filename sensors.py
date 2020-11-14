@@ -36,7 +36,7 @@ class Sensor:
 
         # Recording sensor time
         t = time.process_time()
-
+        print(t)
         # Placing sensor data into numpy array
         temps = [t, tempdata[0][0], tempdata[0][1], tempdata[0][2]]
 
@@ -72,4 +72,5 @@ class Sensor:
     def save_data(self):
         data_df = pd.DataFrame(self.data, columns=['time', 'p0', 'p1', 'p2'])
         data_df.to_excel('raw_data.xlsx')
-        avg_df = pd.DataFrame(self.data, columns=['avg'])
+        avg_df = pd.DataFrame(self.avg_data, columns=['avg'])
+        avg_df.to_excel('avg_data.xlsx')
