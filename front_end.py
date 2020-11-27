@@ -47,7 +47,7 @@ app.layout = html.Div([
     [Input(component_id='interval-component', component_property='n_intervals')])
 def update_pressure_data(n_clicks):
     t = time.process_time()
-    vals = pressure_test.read_pressure()
+    vals = pressure_test.read_pressure
     x.append(t)
     y.append(vals)
     data = (dict(x=[[t]], y=[[vals]]))

@@ -5,6 +5,7 @@ from csv import reader
 import pandas as pd
 import numpy as np
 from random import randint
+import Adafruit_BBIO.ADC as ADC
 
 
 class Sensor:
@@ -35,6 +36,7 @@ class Sensor:
         self.data = []
         self.avg_data = []
 
+    @property
     def read_pressure(self):
         """
        Read data from pressure sensor
@@ -56,6 +58,13 @@ class Sensor:
 
         # Placing sensor data into numpy array
         temps = [t, randint(1, 20), randint(1, 20), randint(1, 20)]
+
+        #temps = [ADC.read(self.pin0), ADC.read(self.pin1),
+        #         ADC.read(self.pin2)]
+
+        # Converts all pressure sensor readings from volts to psi
+        #if self.type == 'pressure':
+        #    self.volt_to_psi(temps)
 
         # Appending numpy array to data list
         self.data.append(temps)
@@ -113,13 +122,14 @@ class Sensor:
         return self.average(temps)
 
     # noinspection PyMethodMayBeStatic
-    def volt_to_psi(self, val):
+    def volt_to_psi(self, temps):
         """
         Convert pressure sensor reading
 
         description:
             Converts given pressure sensor reading from volts to psi
 
+        :param temps: the array of all three pressure sensor readings in volts
         :param val: The reading from the three pressure sensors in volts
 
         :return:
@@ -127,7 +137,7 @@ class Sensor:
         """
 
         # Returns the pressure sensor reading in psi using the equation listed below
-        return 1715.465955 * (val * 1.8) - 312.506433
+        return 1715.465955 * (temps * 1.8) - 312.506433
 
     def save_data(self):
         """

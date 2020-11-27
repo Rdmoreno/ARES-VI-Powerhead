@@ -9,7 +9,7 @@ Iter = 0
 # Pressure Sensor Definitions and Classes
 pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
 
-avg = pressure_test.read_pressure()
+avg = pressure_test.read_pressure
 
 print(avg)
 
