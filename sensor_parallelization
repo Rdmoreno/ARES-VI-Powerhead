@@ -1,0 +1,28 @@
+import asyncio
+from sensors import Sensor
+
+sensor_1 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+sensor_2 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+sensor_3 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+sensor_4 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+sensor_5 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+sensor_6 = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+
+
+async def read_sensor(sensor):
+    reading = sensor.read_pressure()
+    print(reading)
+    print('congrats this was asynchronous')
+
+
+async def main():
+    await asyncio.gather(read_sensor(sensor_1),
+                         read_sensor(sensor_2),
+                         read_sensor(sensor_3),
+                         read_sensor(sensor_4),
+                         read_sensor(sensor_5),
+                         read_sensor(sensor_6),
+                         )
+
+
+asyncio.run(main())

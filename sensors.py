@@ -5,7 +5,7 @@ from csv import reader
 import pandas as pd
 import numpy as np
 from random import randint
-import Adafruit_BBIO.ADC as ADC
+# import Adafruit_BBIO.ADC as ADC
 
 
 class Sensor:
@@ -36,7 +36,6 @@ class Sensor:
         self.data = []
         self.avg_data = []
 
-    @property
     def read_pressure(self):
         """
        Read data from pressure sensor
@@ -59,12 +58,12 @@ class Sensor:
         # Placing sensor data into numpy array
         temps = [t, randint(1, 20), randint(1, 20), randint(1, 20)]
 
-        #temps = [ADC.read(self.pin0), ADC.read(self.pin1),
+        # temps = [ADC.read(self.pin0), ADC.read(self.pin1),
         #         ADC.read(self.pin2)]
 
         # Converts all pressure sensor readings from volts to psi
-        #if self.type == 'pressure':
-        #    self.volt_to_psi(temps)
+        # if self.type == 'pressure':
+        #    psi_dat = self.volt_to_psi(temps)
 
         # Appending numpy array to data list
         self.data.append(temps)
@@ -85,16 +84,17 @@ class Sensor:
         """
         Averages the data from sensors
 
-        description:
-            Averages the readings from the three sensors before and after voting occurs
+        description: Averages the readings from the three sensors before and
+        after voting occurs
 
         :param temps: Array of the operation time and the three sensor readings
 
-        :return:
-            avg: Float, the average of the sensor data, after running through the vote function.
+        :return: avg: Float, the average of the sensor data, after running
+        through the vote function.
         """
 
-        # Averages the current temporary sensor data array and returns it to the vote function
+        # Averages the current temporary sensor data array and returns it to
+        # the vote function
         average = sum(temps) / len(temps)
         return average
 
@@ -102,8 +102,8 @@ class Sensor:
         """
         Voting of the three sensor readings
 
-        description:
-            Votes and removes the sensor most deviating from the average of the three sensor readings.
+        description: Votes and removes the sensor most deviating from the
+        average of the three sensor readings.
 
         :param temps: Array of the operation time and the three sensor readings
 
@@ -111,14 +111,15 @@ class Sensor:
 
         """
 
-        # Averages the given temporary three sensor data array and votes/removes the sensor deviating furthest from the
-        # average.
+        # Averages the given temporary three sensor data array and
+        # votes/removes the sensor deviating furthest from the average.
         list_avg = self.average(temps)
         difference = [abs(list_avg - temps[0]), abs(list_avg - temps[1]),
                       abs(list_avg - temps[2])]
         del temps[difference.index(max(difference))]
 
-        # Returns the average of the remaining two sensor readings as the final sensor reading
+        # Returns the average of the remaining two sensor readings as the
+        # final sensor reading
         return self.average(temps)
 
     # noinspection PyMethodMayBeStatic
@@ -136,21 +137,24 @@ class Sensor:
             The given pressure sensor reading in psi
         """
 
-        # Returns the pressure sensor reading in psi using the equation listed below
+        # Returns the pressure sensor reading in psi using the equation
+        # listed below
         return 1715.465955 * (temps * 1.8) - 312.506433
 
     def save_data(self):
         """
         Record sensor data
 
-        description:
-            Records the data from the current iteration of the sensor reading into a excel file.
+        description: Records the data from the current iteration of the
+        sensor reading into a excel file.
         """
 
-        # Takes raw sensor data readings and appends them into the excel document
+        # Takes raw sensor data readings and appends them into the excel
+        # document
         data_df = pd.DataFrame(self.data, columns=['time', 'p0', 'p1', 'p2'])
         data_df.to_excel('raw_data.xlsx')
 
-        # Takes the average sensor reading after voting and appends them into an excel document
+        # Takes the average sensor reading after voting and appends them
+        # into an excel document
         avg_df = pd.DataFrame(self.avg_data, columns=['avg'])
         avg_df.to_excel('avg_data.xlsx')
