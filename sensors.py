@@ -77,7 +77,7 @@ class Sensor:
         self.avg_data.append(avg)
 
         # Returns average sensor reading to the main function
-        return avg
+        return avg, t
 
     # noinspection PyMethodMayBeStatic
     def average(self, temps):
