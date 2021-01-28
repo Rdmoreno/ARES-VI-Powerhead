@@ -59,21 +59,20 @@ class Sensor:
         t = time.process_time()
 
         # Placing sensor data into numpy array
-        temps = [t, randint(1, 20), randint(1, 20), randint(1, 20)]
+        volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
 
-        # temps = [ADC.read(self.pin0), ADC.read(self.pin1),
-        #         ADC.read(self.pin2)]
+        # volts = np.array([ADC.read(self.pin0), ADC.read(self.pin1),
+        #         ADC.read(self.pin2)])
 
-        pressure = np.array(temps[1:1])
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
-        pressure = self.volt_to_psi(pressure)
+        pressure = self.volt_to_psi(volts)
 
         # fetching voted average
         avg = self.vote(pressure)
 
         # Appends temporary data to sensor data array
-        self.data.append(np.array(temps))
+        self.data.append(pressure)
         self.avg_data.append(avg)
 
         # Returns average sensor reading to the main function
@@ -116,7 +115,7 @@ class Sensor:
         list_avg = self.average(temps)
         difference = [abs(list_avg - temps[0]), abs(list_avg - temps[1]),
                       abs(list_avg - temps[2])]
-        del temps[difference.index(max(difference))]
+        temps = np.delete(temps, difference.index(max(difference)))
 
         # Returns the average of the remaining two sensor readings as the
         # final sensor reading
