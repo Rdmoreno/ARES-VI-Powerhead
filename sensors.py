@@ -1,10 +1,13 @@
 # Ryan Moreno new Sensor Module (work in progress)
+# ARES VI (2020-2021)
 import csv
 import time
 from csv import reader
 import pandas as pd
 import numpy as np
 from random import randint
+
+
 # import Adafruit_BBIO.ADC as ADC
 
 
@@ -61,16 +64,13 @@ class Sensor:
         # temps = [ADC.read(self.pin0), ADC.read(self.pin1),
         #         ADC.read(self.pin2)]
 
+        pressure = np.array(temps[1:1])
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
-        #    psi_dat = self.volt_to_psi(temps)
-
-        # Appending numpy array to data list
-        self.data.append(temps)
-        print(self.data)
+        pressure = self.volt_to_psi(pressure)
 
         # fetching voted average
-        avg = self.vote(temps[1::])
+        avg = self.vote(pressure)
 
         # Appends temporary data to sensor data array
         self.data.append(np.array(temps))
@@ -95,7 +95,7 @@ class Sensor:
 
         # Averages the current temporary sensor data array and returns it to
         # the vote function
-        average = sum(temps) / len(temps)
+        average = np.sum(temps) / len(temps)
         return average
 
     def vote(self, temps):
@@ -139,7 +139,9 @@ class Sensor:
 
         # Returns the pressure sensor reading in psi using the equation
         # listed below
-        return 1715.465955 * (temps * 1.8) - 312.506433
+
+        return temps
+        # 1715.465955 * 1.8 - np.array([312.506433, 312.506433, 312.506433])
 
     def save_data(self):
         """
