@@ -35,7 +35,7 @@ app.layout = html.Div([
     html.Button('Read', id='readbutton', n_clicks=0),
     html.Button('Save', id='savebutton', n_clicks=0),
     html.Button('Dialog', id='dialog', n_clicks=0),
-    html.Div(id='save_data'), `
+    html.Div(id='save_data'),
     daq.Gauge(
         showCurrentValue=True,
         id='my-daq-gauge',
