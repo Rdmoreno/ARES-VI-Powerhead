@@ -70,7 +70,7 @@ class Sensor:
 
         # fetching voted average
         avg = self.vote(pressure)
-
+        # Testing
         # Appends temporary data to sensor data array
         self.data.append(pressure)
         self.avg_data.append(avg)
