@@ -7,7 +7,7 @@ from valve import Valve
 Iter = 0
 
 # Pressure Sensor Definitions and Classes
-pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2', 'channel')
 
 avg = pressure_test.read_pressure
 

@@ -18,7 +18,7 @@ x = [time.process_time(),
      time.process_time(),
      time.process_time()]
 
-pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2')
+pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2', 'channel')
 data = [dict(x=x, y=y, type='scattergl', mode='lines+markers')]
 layout = dict(title=dict(text='Live Pressure'),
               xaxis=dict(autorange=False, range=[0, 100]),
@@ -103,4 +103,4 @@ def test(n_clicks):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host="0.0.0.0")
+    app.run_server(debug=False, host="192.168.7.2")

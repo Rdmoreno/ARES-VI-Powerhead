@@ -6,14 +6,13 @@ from csv import reader
 import pandas as pd
 import numpy as np
 from random import randint
-
-
 # import Adafruit_BBIO.ADC as ADC
+import spidev
 
 
 class Sensor:
     def __init__(self, given_name, given_type,
-                 given_pin0, given_pin1, given_pin2):
+                 given_pin0, given_pin1, given_pin2, given_channel):
         """
         Read data from sensor
 
@@ -38,6 +37,7 @@ class Sensor:
         self.pin2 = given_pin2
         self.data = []
         self.avg_data = []
+        self.channel = given_channel
 
     def read_pressure(self):
         """
@@ -63,6 +63,10 @@ class Sensor:
 
         # volts = np.array([ADC.read(self.pin0), ADC.read(self.pin1),
         #         ADC.read(self.pin2)])
+        b
+
+        # processed_data = self.adc_reading
+        # volts = np.array([processed_data, processed_data, processed_data])
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
@@ -77,6 +81,12 @@ class Sensor:
 
         # Returns average sensor reading to the main function
         return avg, t
+
+    def adc_reading(self):
+        spi = spidev.SpiDev()
+        adc = spi.xfer2([6 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
+        processed_data = ((adc[1] & 15) << 8) | adc[2]
+        return processed_data
 
     # noinspection PyMethodMayBeStatic
     def average(self, temps):
