@@ -6,7 +6,7 @@ from csv import reader
 import pandas as pd
 import numpy as np
 from random import randint
-# import Adafruit_BBIO.ADC as ADC
+import Adafruit_BBIO.GPIO as GPIO
 import spidev
 
 
@@ -59,14 +59,14 @@ class Sensor:
         t = time.process_time()
 
         # Placing sensor data into numpy array
-        volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
+        # volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
 
         # volts = np.array([ADC.read(self.pin0), ADC.read(self.pin1),
         #         ADC.read(self.pin2)])
-        b
 
-        # processed_data = self.adc_reading
-        # volts = np.array([processed_data, processed_data, processed_data])
+        processed_data = self.adc_reading()
+        volts = np.array([processed_data, processed_data, processed_data])
+        print(volts)
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
@@ -83,9 +83,13 @@ class Sensor:
         return avg, t
 
     def adc_reading(self):
+        GPIO.output("P9_27", GPIO.LOW)
+        GPIO.cleanup()
         spi = spidev.SpiDev()
-        adc = spi.xfer2([6 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
+        adc = spi.xfer([6 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
         processed_data = ((adc[1] & 15) << 8) | adc[2]
+        GPIO.output("P9_27", GPIO.HIGH)
+        GPIO.cleanup()
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -104,7 +108,7 @@ class Sensor:
 
         # Averages the current temporary sensor data array and returns it to
         # the vote function
-        average = np.sum(temps) / len(temps)
+        average = np.sum(temps) / np.len(temps)
         return average
 
     def vote(self, temps):
@@ -150,7 +154,7 @@ class Sensor:
         # listed below
 
         return temps
-        # 1715.465955 * 1.8 - np.array([312.506433, 312.506433, 312.506433])
+        1715.465955 * 1.8 - np.array([312.506433, 312.506433, 312.506433])
 
     def save_data(self):
         """
