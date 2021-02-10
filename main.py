@@ -1,16 +1,16 @@
 import time
 import pandas as pd
 import csv
+from Adafruit_BBIO import GPIO
 from sensors import Sensor
 from valve import Valve
-import Adafruit_BBIO.GPIO as GPIO
 
 Iter = 0
 
 # Pressure Sensor Definitions and Classes
-GPIO.setup("P9_27", GPIO.OUT)
-GPIO.output("P9_27", GPIO.HIGH)
-GPIO.cleanup()
+# GPIO.setup("P9_27", GPIO.OUT)
+# GPIO.output("P9_27", GPIO.HIGH)
+# GPIO.cleanup()
 pressure_test = Sensor('sensor_test_class', 'pressure', 'pin0', 'pin1', 'pin2', 0)
 
 avg = pressure_test.read_pressure()

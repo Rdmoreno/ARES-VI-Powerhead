@@ -59,37 +59,34 @@ class Sensor:
         t = time.process_time()
 
         # Placing sensor data into numpy array
-        # volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
-
-        # volts = np.array([ADC.read(self.pin0), ADC.read(self.pin1),
-        #         ADC.read(self.pin2)])
-
-        processed_data = self.adc_reading()
-        volts = np.array([processed_data, processed_data, processed_data])
+        volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
         print(volts)
+        # processed_data = self.adc_reading()
+        # volts = np.array([processed_data, processed_data, processed_data])
+        volts_ref = self.reference_volt_conversion(volts)
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
-        pressure = self.volt_to_psi(volts)
+        pressure = self.volt_to_psi(volts_ref)
 
         # fetching voted average
         avg = self.vote(pressure)
         # Testing
         # Appends temporary data to sensor data array
-        self.data.append(pressure)
+        raw_data = np.append([t], [pressure])
+        self.data.append(raw_data)
         self.avg_data.append(avg)
+        self.save_data()
 
         # Returns average sensor reading to the main function
         return avg, t
 
     def adc_reading(self):
-        GPIO.output("P9_27", GPIO.LOW)
-        GPIO.cleanup()
         spi = spidev.SpiDev()
+        spi.open(0, 0)
+        spi.mode = 0b01
         adc = spi.xfer([6 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
         processed_data = ((adc[1] & 15) << 8) | adc[2]
-        GPIO.output("P9_27", GPIO.HIGH)
-        GPIO.cleanup()
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -108,7 +105,7 @@ class Sensor:
 
         # Averages the current temporary sensor data array and returns it to
         # the vote function
-        average = np.sum(temps) / np.len(temps)
+        average = np.sum(temps) / len(temps)
         return average
 
     def vote(self, temps):
@@ -152,9 +149,29 @@ class Sensor:
 
         # Returns the pressure sensor reading in psi using the equation
         # listed below
+        temps = 1715.465955 * (1.8 * temps) - np.array([312.506433, 312.506433, 312.506433])
 
         return temps
-        1715.465955 * 1.8 - np.array([312.506433, 312.506433, 312.506433])
+
+    def reference_volt_conversion(self, temps):
+        """
+        Correct voltage reading to the correct voltage reference
+
+        description:
+            Corrects the voltage reading to the reading based on the reference
+            voltage of 3.3 Volts
+
+        :param temps: the array of all three pressure sensor readings in volts
+        :param val: The reading from the three pressure sensors in volts
+
+        :return:
+            The given voltage in the correct reference frame
+        """
+
+        reference_voltage = 3.3
+        temps = temps / reference_voltage * 4095
+
+        return temps
 
     def save_data(self):
         """
