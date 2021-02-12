@@ -59,15 +59,18 @@ class Sensor:
         t = time.process_time()
 
         # Placing sensor data into numpy array
-        volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
+        # volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
+
+        processed_data = self.adc_reading()
+        volts = np.array([processed_data, processed_data, processed_data])
         print(volts)
-        # processed_data = self.adc_reading()
-        # volts = np.array([processed_data, processed_data, processed_data])
         volts_ref = self.reference_volt_conversion(volts)
+        print(volts_ref)
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
         pressure = self.volt_to_psi(volts_ref)
+        print(pressure)
 
         # fetching voted average
         avg = self.vote(pressure)
@@ -76,17 +79,20 @@ class Sensor:
         raw_data = np.append([t], [pressure])
         self.data.append(raw_data)
         self.avg_data.append(avg)
-        self.save_data()
+        # self.save_data()
 
         # Returns average sensor reading to the main function
         return avg, t
 
     def adc_reading(self):
+        GPIO.output("P9_27", GPIO.LOW)
         spi = spidev.SpiDev()
-        spi.open(0, 0)
-        spi.mode = 0b01
-        adc = spi.xfer([6 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
+        spi.open(1, 0)
+        spi.mode = 0b00
+        spi.max_speed_hz = 1000000
+        adc = spi.xfer([4 | 1 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
         processed_data = ((adc[1] & 15) << 8) | adc[2]
+        print(processed_data)
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -113,7 +119,7 @@ class Sensor:
         Voting of the three sensor readings
 
         description: Votes and removes the sensor most deviating from the
-        average of the three sensor readings.
+        average +of the three sensor readings.
 
         :param temps: Array of the operation time and the three sensor readings
 
