@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from random import randint
 import Adafruit_BBIO.GPIO as GPIO
+from Adafruit_BBIO.SPI import SPI
 import spidev
 
 
@@ -86,13 +87,16 @@ class Sensor:
 
     def adc_reading(self):
         GPIO.output("P9_27", GPIO.LOW)
-        spi = spidev.SpiDev()
-        spi.open(1, 0)
+        spi = SPI(0, 0)
+        # spi = spidev.SpiDev()
+        spi.bpw = 12
         spi.mode = 0b00
-        spi.max_speed_hz = 1000000
-        adc = spi.xfer([4 | 1 | ((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
+        spi.msh = 1000000
+        adc = spi.xfer([((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
         processed_data = ((adc[1] & 15) << 8) | adc[2]
         print(processed_data)
+        spi.close()
+        GPIO.output("P9_27", GPIO.HIGH)
         return processed_data
 
     # noinspection PyMethodMayBeStatic
