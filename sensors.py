@@ -86,17 +86,23 @@ class Sensor:
         return avg, t
 
     def adc_reading(self):
-        GPIO.output("P9_27", GPIO.LOW)
-        spi = SPI(0, 0)
-        # spi = spidev.SpiDev()
-        spi.bpw = 12
-        spi.mode = 0b00
-        spi.msh = 1000000
-        adc = spi.xfer([((self.channel & 4) >> 2), (self.channel & 3) << 6, 0])
-        processed_data = ((adc[1] & 15) << 8) | adc[2]
-        print(processed_data)
-        spi.close()
-        GPIO.output("P9_27", GPIO.HIGH)
+        i = 1
+        while i:
+            GPIO.output("P9_27", GPIO.LOW)
+            # spi = SPI(0, 0)
+            spi = spidev.SpiDev()
+            spi.open(0, 0)
+            spi.mode = 0
+            spi.bits_per_word = 8
+            spi.max_speed_hz = 1000000
+            # adc = spi.xfer2([0b00000110, 0b00000000, 0b00000000])
+            adc = spi.xfer2([0b11111111])
+            # processed_data = ((adc[1] & 15) << 8) | adc[2]
+            print(adc)
+            # print(processed_data)
+            spi.close()
+            GPIO.output("P9_27", GPIO.HIGH)
+        processed_data = 0
         return processed_data
 
     # noinspection PyMethodMayBeStatic

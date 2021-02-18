@@ -7,6 +7,11 @@ from valve import Valve
 
 Iter = 0
 
+# config-pin p9_17 spi_cs
+# config-pin p9_18 spi
+# config-pin p9_21 spi
+# config-pin p9_22 spi_sclk
+
 # Pressure Sensor Definitions and Classes
 GPIO.setup("P9_27", GPIO.OUT)
 GPIO.output("P9_27", GPIO.HIGH)
