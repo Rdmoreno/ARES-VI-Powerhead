@@ -112,7 +112,7 @@ class Sensor:
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            data_conversion = int(raw_data[4:], 2)/4095*3350
+            data_conversion = int(raw_data[4:], 2)/4095*5000
             processed_data[x] = data_conversion
 
             spi.close()

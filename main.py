@@ -14,13 +14,13 @@ Iter = 0
 # config-pin p9_17 spi_cs;  config-pin p9_18 spi; config-pin p9_21 spi; config-pin p9_22 spi_sclk
 
 # Pressure Sensor Definitions and Classes
-GPIO.setup("P9_27", GPIO.OUT)
-GPIO.output("P9_27", GPIO.HIGH)
-GPIO.setup("P9_23", GPIO.OUT)
-GPIO.output("P9_23", GPIO.HIGH)
-GPIO.setup("P9_25", GPIO.OUT)
-GPIO.output("P9_25", GPIO.HIGH)
-pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_23', 'P9_25', 'P9_27', '000', '000', '000')
+GPIO.setup("P9_11", GPIO.OUT)
+GPIO.output("P9_11", GPIO.HIGH)
+GPIO.setup("P9_13", GPIO.OUT)
+GPIO.output("P9_13", GPIO.HIGH)
+GPIO.setup("P9_15", GPIO.OUT)
+GPIO.output("P9_15", GPIO.HIGH)
+pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_11', 'P9_13', 'P9_15', '000', '000', '000')
 
 avg = pressure_test.read_pressure()
 
