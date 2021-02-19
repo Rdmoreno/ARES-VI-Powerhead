@@ -13,7 +13,7 @@ import spidev
 
 class Sensor:
     def __init__(self, given_name, given_type,
-                 given_pin0, given_pin1, given_pin2, given_channel):
+                 given_pin0, given_pin1, given_pin2, given_channel1, given_channel2, given_channel3):
         """
         Read data from sensor
 
@@ -36,9 +36,13 @@ class Sensor:
         self.pin0 = given_pin0
         self.pin1 = given_pin1
         self.pin2 = given_pin2
+        self.pins = [given_pin0, given_pin1, given_pin2]
         self.data = []
         self.avg_data = []
-        self.channel = given_channel
+        self.channel1 = given_channel1
+        self.channel2 = given_channel2
+        self.channel3 = given_channel3
+        self.channel = [given_channel1, given_channel2, given_channel3]
 
     def read_pressure(self):
         """
@@ -63,15 +67,13 @@ class Sensor:
         # volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
 
         processed_data = self.adc_reading()
-        volts = np.array([processed_data, processed_data, processed_data])
+        volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
         print(volts)
         volts_ref = self.reference_volt_conversion(volts)
-        print(volts_ref)
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
         pressure = self.volt_to_psi(volts_ref)
-        print(pressure)
 
         # fetching voted average
         avg = self.vote(pressure)
@@ -86,25 +88,43 @@ class Sensor:
         return avg, t
 
     def adc_reading(self):
-        i = 1
-        while i:
-            GPIO.output("P9_27", GPIO.LOW)
-            # spi = SPI(0, 0)
+        processed_data = [0]*3
+        for x in range(3):
+            GPIO.output(self.pins[x], GPIO.LOW)
+
             spi = spidev.SpiDev()
             spi.open(0, 0)
+
             spi.mode = 0
             spi.bits_per_word = 8
             spi.max_speed_hz = 1000000
-            adc = spi.xfer2([0b00000110, 0b00000000, 0b00000000])
-            # adc = spi.xfer2([0b11111111])
+
+            if self.type == 'pressure':
+                bit_mode = '0'
+            else:
+                bit_mode = '1'
+
+            # bit_channel = bit_mode + format(self.channel[x], '03b')
+            bit_channel = bit_mode + self.channel[x]
+            byte_1 = int(('000001' + bit_channel[0:1]), base=2)
+            byte_2 = int((bit_channel[2:3] + '000000'), base=2)
+            byte_3 = 0b00000000
+            # print(bin(byte_1))
+            # print(bin(byte_2))
+            # print(bin(byte_3))
+            # print()
+
+            adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            processed_data = int(raw_data[4:],2)/4095*3350
-            # processed_data = ((adc[1]) << 8) + adc[2]
-            #print(adc)
-            print(processed_data)
+            data_conversion = int(raw_data[4:], 2)/4095*3350
+            processed_data[x] = data_conversion
+            print(raw_data)
+            print(data_conversion)
+            print(processed_data[x])
+            print()
+
             spi.close()
-            GPIO.output("P9_27", GPIO.HIGH)
-        processed_data = 0
+            GPIO.output(self.pins[x], GPIO.HIGH)
         return processed_data
 
     # noinspection PyMethodMayBeStatic
