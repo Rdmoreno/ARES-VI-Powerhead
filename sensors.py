@@ -95,11 +95,13 @@ class Sensor:
             spi.mode = 0
             spi.bits_per_word = 8
             spi.max_speed_hz = 1000000
-            # adc = spi.xfer2([0b00000110, 0b00000000, 0b00000000])
-            adc = spi.xfer2([0b11111111])
-            # processed_data = ((adc[1] & 15) << 8) | adc[2]
-            print(adc)
-            # print(processed_data)
+            adc = spi.xfer2([0b00000110, 0b00000000, 0b00000000])
+            # adc = spi.xfer2([0b11111111])
+            raw_data = format(adc[1], '08b') + format(adc[2], '08b')
+            processed_data = int(raw_data[4:],2)/4095*3350
+            # processed_data = ((adc[1]) << 8) + adc[2]
+            #print(adc)
+            print(processed_data)
             spi.close()
             GPIO.output("P9_27", GPIO.HIGH)
         processed_data = 0
