@@ -106,22 +106,14 @@ class Sensor:
 
             # bit_channel = bit_mode + format(self.channel[x], '03b')
             bit_channel = bit_mode + self.channel[x]
-            byte_1 = int(('000001' + bit_channel[0:1]), base=2)
-            byte_2 = int((bit_channel[2:3] + '000000'), base=2)
+            byte_1 = int(('000001' + bit_channel[0:2]), base=2)
+            byte_2 = int((bit_channel[2:4] + '000000'), base=2)
             byte_3 = 0b00000000
-            # print(bin(byte_1))
-            # print(bin(byte_2))
-            # print(bin(byte_3))
-            # print()
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
             data_conversion = int(raw_data[4:], 2)/4095*3350
             processed_data[x] = data_conversion
-            print(raw_data)
-            print(data_conversion)
-            print(processed_data[x])
-            print()
 
             spi.close()
             GPIO.output(self.pins[x], GPIO.HIGH)
