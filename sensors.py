@@ -69,11 +69,11 @@ class Sensor:
         processed_data = self.adc_reading()
         volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
         print(volts)
-        volts_ref = self.reference_volt_conversion(volts)
 
         # Converts all pressure sensor readings from volts to psi
         # if self.type == 'pressure':
-        pressure = self.volt_to_psi(volts_ref)
+        pressure = self.volt_to_psi(volts)
+        print(pressure)
 
         # fetching voted average
         avg = self.vote(pressure)
@@ -88,7 +88,8 @@ class Sensor:
         return avg, t
 
     def adc_reading(self):
-        processed_data = [0]*3
+        processed_data = [0] * 3
+        julian_stuff = [0] * 3
         for x in range(3):
             GPIO.output(self.pins[x], GPIO.LOW)
 
@@ -112,11 +113,13 @@ class Sensor:
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            data_conversion = int(raw_data[4:], 2)/4095*5000
+            julian_stuff[x] = raw_data
+            data_conversion = int(raw_data[4:], 2) / 4095 * 5000
             processed_data[x] = data_conversion
 
             spi.close()
             GPIO.output(self.pins[x], GPIO.HIGH)
+        print(julian_stuff)
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -177,10 +180,10 @@ class Sensor:
             The given pressure sensor reading in psi
         """
 
-        # Returns the pressure sensor reading in psi using the equation
-        # listed below
-        temps = 1715.465955 * (1.8 * temps) - np.array([312.506433, 312.506433, 312.506433])
-
+        if self.type == 'pressure':
+            temps = (temps / 100) * 1000
+        else:
+            temps = (temps - np.array([1.25, 1.25, 1.25])) / 5
         return temps
 
     def reference_volt_conversion(self, temps):
