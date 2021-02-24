@@ -2,12 +2,14 @@
 # Legacy module from Greg Liesen (ARES V 2019-2020)
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
+from Adafruit_I2C import Adafruit_I2C
+from smbus import SMBus
 import pandas as pd
 import time
 
 
 class Valve:
-    def __init__(self, givenName, givenPin, givenType):
+    def __init__(self, givenName, givenPin, givenType, givenDevice):
         """
         Change or read Valve Status
 
@@ -24,6 +26,7 @@ class Valve:
         self.type = givenType
         self.state = 'Error, no state given'
         self.df = pd.DataFrame(columns=['time', 'position'])
+        self.device = givenDevice
         if self.type == 'solenoid':
             GPIO.setup(self.pin, GPIO.OUT)
 
@@ -40,7 +43,9 @@ class Valve:
         if self.type == 'Solenoid':
             GPIO.output(self.pin, GPIO.LOW)
         else:
-            PWM.stop(self.pin)
+            # PWM.stop(self.pin)
+            bus = SMBus(self.device)
+            bus.read_i2c_block_data(self.device, )
         self.state = 'Closed'
         self.df = pd.DataFrame([[t, 0]], columns=['time', 'position'])
 

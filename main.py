@@ -4,6 +4,7 @@ import csv
 from Adafruit_BBIO import GPIO
 from sensors import Sensor
 from valve import Valve
+from Adafruit_I2C import Adafruit_I2C
 
 Iter = 1
 
@@ -12,6 +13,9 @@ Iter = 1
 # config-pin p9_21 spi
 # config-pin p9_22 spi_sclk
 # config-pin p9_17 spi_cs; config-pin p9_18 spi; config-pin p9_21 spi; config-pin p9_22 spi_sclk
+
+# i2cdetect -y -r 0
+# i2cdetect -y -r 1
 
 # Pressure Sensor Definitions and Classes
 GPIO.setup("P9_12", GPIO.OUT)

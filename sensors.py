@@ -36,7 +36,6 @@ class Sensor:
         self.pin0 = given_pin0
         self.pin1 = given_pin1
         self.pin2 = given_pin2
-        self.pins = [given_pin0, given_pin1, given_pin2]
         self.data = []
         self.avg_data = []
         self.channel1 = given_channel1
