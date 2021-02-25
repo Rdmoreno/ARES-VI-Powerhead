@@ -3,13 +3,13 @@
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
 from Adafruit_I2C import Adafruit_I2C
-from smbus import SMBus
+from smbus2 import SMBus, i2c_msg
 import pandas as pd
 import time
 
 
 class Valve:
-    def __init__(self, givenName, givenPin, givenType, givenDevice):
+    def __init__(self, givenName, givenPin, givenPin2, givenType, givenDevice):
         """
         Change or read Valve Status
 
@@ -23,12 +23,16 @@ class Valve:
         """
         self.name = givenName
         self.pin = givenPin
+        self.pin2 = givenPin2
         self.type = givenType
         self.state = 'Error, no state given'
         self.df = pd.DataFrame(columns=['time', 'position'])
         self.device = givenDevice
         if self.type == 'solenoid':
             GPIO.setup(self.pin, GPIO.OUT)
+        if self.type == 'arduino':
+            GPIO.setup(self.pin, GPIO.OUT)
+            GPIO.setup(self.pin2, GPIO.OUT)
 
     def close(self):
         """
@@ -60,7 +64,13 @@ class Valve:
 
         t = time.process_time()
         if self.type != 'Solenoid':
-            PWM.start(self.pin, 10)
+            with SMBus(2) as bus:
+                percentage_calc = 4095 * .1
+                rounded_percentage = round(percentage_calc)
+                byte_1 = (rounded_percentage >> 8) & 0xff
+                byte_2 = rounded_percentage & 0xff
+                msg = i2c_msg.write(self.device, [byte_1, byte_2])
+                bus.i2c_rdwr(msg)
             self.state = 'Partially Opened'
         self.df = pd.DataFrame([[t, 0.1]], columns=['time', 'position'])
 
@@ -77,7 +87,10 @@ class Valve:
         if self.type == 'Solenoid':
             GPIO.output(self.pin, GPIO.HIGH)
         else:
-            PWM.set_duty_cycle(self.pin, 255)
+            with SMBus(2) as bus:
+                # PWM.set_duty_cycle(self.pin, 255)
+                msg = i2c_msg.write(self.device, [15, 255])
+                bus.i2c_rdwr(msg)
         self.state = 'Open'
         self.df = pd.DataFrame([[t, 1]], columns=['time', 'position'])
 
