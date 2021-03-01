@@ -5,9 +5,7 @@ import time
 from csv import reader
 import pandas as pd
 import numpy as np
-from random import randint
 import Adafruit_BBIO.GPIO as GPIO
-from Adafruit_BBIO.SPI import SPI
 import spidev
 
 
@@ -46,8 +44,15 @@ class Sensor:
         self.channel2 = given_channel1
         self.channel3 = given_channel2
         self.channel = [given_channel0, given_channel1, given_channel2]
+        if self.type == 'pressure' or 'temperature':
+            GPIO.setup(given_pin0, GPIO.OUT)
+            GPIO.output(given_pin0, GPIO.HIGH)
+            GPIO.setup(given_pin1, GPIO.OUT)
+            GPIO.output(given_pin1, GPIO.HIGH)
+            GPIO.setup(given_pin2, GPIO.OUT)
+            GPIO.output(given_pin2, GPIO.HIGH)
 
-    def read_pressure(self):
+    def read_sensor(self):
         """
        Read data from pressure sensor
 
@@ -89,7 +94,6 @@ class Sensor:
 
             spi = spidev.SpiDev()
             spi.open(0, 0)
-
             spi.mode = 0
             spi.bits_per_word = 8
             spi.max_speed_hz = 1000000
@@ -99,7 +103,6 @@ class Sensor:
             else:
                 bit_mode = '1'
 
-            # bit_channel = bit_mode + format(self.channel[x], '03b')
             bit_channel = bit_mode + self.channel[x]
             byte_1 = int(('000001' + bit_channel[0:2]), base=2)
             byte_2 = int((bit_channel[2:4] + '000000'), base=2)
@@ -165,8 +168,7 @@ class Sensor:
         description:
             Converts given pressure sensor reading from volts to psi
 
-        :param temps: the array of all three pressure sensor readings in volts
-        :param val: The reading from the three pressure sensors in volts
+        :param temps: the array of all three sensor readings in volts
 
         :return:
             The given pressure sensor reading in psi

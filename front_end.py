@@ -62,7 +62,7 @@ app.layout = html.Div([
     [Input('interval-component', 'n_intervals')]
 )
 def read_press(n_intervals):
-    return pressure_test.read_pressure()
+    return pressure_test.read_sensor()
 
 
 @app.callback(

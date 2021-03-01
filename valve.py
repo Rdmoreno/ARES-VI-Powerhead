@@ -1,8 +1,6 @@
 # Valve Module
 # Legacy module from Greg Liesen (ARES V 2019-2020)
 import Adafruit_BBIO.GPIO as GPIO
-import Adafruit_BBIO.PWM as PWM
-from Adafruit_I2C import Adafruit_I2C
 from smbus2 import SMBus, i2c_msg
 import pandas as pd
 import time
@@ -22,17 +20,17 @@ class Valve:
         :param givenType: Type of Valve being manipulated
         """
         self.name = givenName
-        self.pin = givenPin
-        self.pin2 = givenPin2
+        self.pin0 = givenPin
+        self.pin1 = givenPin2
         self.type = givenType
         self.state = 'Error, no state given'
         self.df = pd.DataFrame(columns=['time', 'position'])
         self.device = givenDevice
         if self.type == 'solenoid':
-            GPIO.setup(self.pin, GPIO.OUT)
-        if self.type == 'arduino':
-            GPIO.setup(self.pin, GPIO.OUT)
-            GPIO.setup(self.pin2, GPIO.OUT)
+            GPIO.setup(self.pin0, GPIO.OUT)
+        if self.type == 'actuator':
+            GPIO.setup(self.pin0, GPIO.OUT)
+            GPIO.setup(self.pin1, GPIO.OUT)
 
     def close(self):
         """
@@ -45,11 +43,11 @@ class Valve:
 
         t = time.process_time()
         if self.type == 'Solenoid':
-            GPIO.output(self.pin, GPIO.LOW)
+            GPIO.output(self.pin0, GPIO.LOW)
         else:
-            # PWM.stop(self.pin)
-            bus = SMBus(self.device)
-            bus.read_i2c_block_data(self.device, )
+            with SMBus(2) as bus:
+                msg = i2c_msg.write(self.device, [0, 0])
+                bus.i2c_rdwr(msg)
         self.state = 'Closed'
         self.df = pd.DataFrame([[t, 0]], columns=['time', 'position'])
 
@@ -85,10 +83,9 @@ class Valve:
 
         t = time.process_time()
         if self.type == 'Solenoid':
-            GPIO.output(self.pin, GPIO.HIGH)
+            GPIO.output(self.pin0, GPIO.HIGH)
         else:
             with SMBus(2) as bus:
-                # PWM.set_duty_cycle(self.pin, 255)
                 msg = i2c_msg.write(self.device, [15, 255])
                 bus.i2c_rdwr(msg)
         self.state = 'Open'
