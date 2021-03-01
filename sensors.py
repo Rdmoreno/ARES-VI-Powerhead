@@ -13,7 +13,7 @@ import spidev
 
 class Sensor:
     def __init__(self, given_name, given_type,
-                 given_pin0, given_pin1, given_pin2, given_channel1, given_channel2, given_channel3):
+                 given_pin0, given_pin1, given_pin2, given_channel0, given_channel1, given_channel2):
         """
         Read data from sensor
 
@@ -26,6 +26,9 @@ class Sensor:
         :param given_pin0: The first pin in the group
         :param given_pin1: The second pin in the group
         :param given_pin2: The third pin in the group
+        :param given_channel0: The first channel select for the first sensor in the group
+        :param given_channel1: The second channel select for the second sensor in the group
+        :param given_channel2: The third channel select for the third sensor in the group
 
         :return: avg: Float, the average of the sensor data, after running through the vote function.
         """
@@ -36,12 +39,13 @@ class Sensor:
         self.pin0 = given_pin0
         self.pin1 = given_pin1
         self.pin2 = given_pin2
+        self.pins = [given_pin0, given_pin1, given_pin2]
         self.data = []
         self.avg_data = []
-        self.channel1 = given_channel1
-        self.channel2 = given_channel2
-        self.channel3 = given_channel3
-        self.channel = [given_channel1, given_channel2, given_channel3]
+        self.channel1 = given_channel0
+        self.channel2 = given_channel1
+        self.channel3 = given_channel2
+        self.channel = [given_channel0, given_channel1, given_channel2]
 
     def read_pressure(self):
         """
@@ -54,41 +58,32 @@ class Sensor:
         :return: avg: Float, the average of the sensor data, after running through the vote function.
         """
 
-        # Streaming data from CSV to simulate sensor reading
-        # with open("pressuretestdata.csv", 'rU') as f:
-        #     tempdata = [list(map(int, rec)) for rec in
-        #                 reader(f, delimiter=',')]
-
         # Recording sensor time
         t = time.process_time()
 
-        # Placing sensor data into numpy array
-        # volts = np.array([randint(1, 20), randint(1, 20), randint(1, 20)])
-
         processed_data = self.adc_reading()
         volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
-        print(volts)
-
         # Converts all pressure sensor readings from volts to psi
-        # if self.type == 'pressure':
-        pressure = self.volt_to_psi(volts)
-        print(pressure)
+        data_unit = self.volt_to_unit(volts)
+        print(data_unit)
+        avg = self.vote(data_unit)
 
-        # fetching voted average
-        avg = self.vote(pressure)
-        # Testing
         # Appends temporary data to sensor data array
-        raw_data = np.append([t], [pressure])
+        raw_data = np.append([t], [data_unit])
         self.data.append(raw_data)
         self.avg_data.append(avg)
-        # self.save_data()
-
-        # Returns average sensor reading to the main function
         return avg, t
 
     def adc_reading(self):
+        """
+        Reads sensors using SPI
+
+        description: Uses SPI commands toolbox to retrieved raw binary values from
+        the sensors and to convert them to an integer value
+
+        :return: processed_data: Float, the raw converted integer values from the sensors
+        """
         processed_data = [0] * 3
-        julian_stuff = [0] * 3
         for x in range(3):
             GPIO.output(self.pins[x], GPIO.LOW)
 
@@ -112,13 +107,11 @@ class Sensor:
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            julian_stuff[x] = raw_data
             data_conversion = int(raw_data[4:], 2) / 4095 * 5000
             processed_data[x] = data_conversion
 
             spi.close()
             GPIO.output(self.pins[x], GPIO.HIGH)
-        print(julian_stuff)
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -165,9 +158,9 @@ class Sensor:
         return self.average(temps)
 
     # noinspection PyMethodMayBeStatic
-    def volt_to_psi(self, temps):
+    def volt_to_unit(self, temps):
         """
-        Convert pressure sensor reading
+        Convert reading into its correct unit based on its type
 
         description:
             Converts given pressure sensor reading from volts to psi
