@@ -7,7 +7,7 @@ import time
 
 
 class Valve:
-    def __init__(self, givenName, givenPin, givenPin2, givenType, givenDevice):
+    def __init__(self, givenName, givenPin, givenPin2, givenType, givenDevice, givenPartial):
         """
         Change or read Valve Status
 
@@ -18,6 +18,8 @@ class Valve:
         :param givenName: Name of the Valve
         :param givenPin: Pin number of the Valve
         :param givenType: Type of Valve being manipulated
+        :param givenDevice: Select the device to connect to via. I2C
+        :param givenPartial: The percentage open the actuators should open
         """
         self.name = givenName
         self.pin0 = givenPin
@@ -26,6 +28,7 @@ class Valve:
         self.state = 'Error, no state given'
         self.df = pd.DataFrame(columns=['time', 'position'])
         self.device = givenDevice
+        self.partial = givenPartial
         if self.type == 'solenoid':
             GPIO.setup(self.pin0, GPIO.OUT)
         if self.type == 'actuator':
@@ -63,7 +66,7 @@ class Valve:
         t = time.process_time()
         if self.type != 'Solenoid':
             with SMBus(2) as bus:
-                percentage_calc = 4095 * .1
+                percentage_calc = 4095 * (self.partial/100)
                 rounded_percentage = round(percentage_calc)
                 byte_1 = (rounded_percentage >> 8) & 0xff
                 byte_2 = rounded_percentage & 0xff
