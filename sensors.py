@@ -217,3 +217,19 @@ class Sensor:
         # into an excel document
         avg_df = pd.DataFrame(self.avg_data, columns=['avg'])
         avg_df.to_excel('avg_data.xlsx')
+
+    def verify_connection(self):
+        """
+        Verify functionality
+
+        description: verifies that all sensors can be read before testing can
+        continue
+        """
+        while True:
+            try:
+                self.adc_reading()
+                return True
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS FOR...")
+                print(self.name)
+                return False

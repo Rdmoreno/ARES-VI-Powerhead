@@ -103,3 +103,29 @@ class Valve:
         """
 
         print(self.name, ' is ', self.state)
+
+    def verify_connection_valve(self):
+        """
+        Verify functionality
+
+        description: verifies that all sensors can be read before testing can
+        continue
+        """
+        while True:
+            try:
+                if self.type == 'Solenoid':
+                    GPIO.output(self.pin0, GPIO.HIGH)
+                    time.sleep(2)
+                    GPIO.output(self.pin0, GPIO.LOW)
+                else:
+                    with SMBus(2) as bus:
+                        msg = i2c_msg.write(self.device, [15, 255])
+                        bus.i2c_rdwr(msg)
+                        time.sleep(2)
+                        msg = i2c_msg.write(self.device, [0, 0])
+                        bus.i2c_rdwr(msg)
+                return True
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS FOR...")
+                print(self.name)
+                return False
