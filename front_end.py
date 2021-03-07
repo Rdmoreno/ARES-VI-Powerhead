@@ -26,10 +26,10 @@ temperature_empty_line = Sensor('temperature_empty_line', 'temperature', 'P9_12'
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
-                       xaxis=dict(autorange=False, range=[0, 60 * 20]),
+                       xaxis=dict(autorange=False, range=[0, 60]),
                        yaxis=dict(autorange=False, range=[0, 110]))
 layout_temperature = dict(title=dict(text='Live Temperature'),
-                          xaxis=dict(autorange=False, range=[0, 60 * 20]),
+                          xaxis=dict(autorange=False, range=[0, 60]),
                           yaxis=dict(autorange=False, range=[-220, 80]))
 
 pressure_fig = dict(data=data, layout=layout_pressure)
@@ -43,8 +43,8 @@ app.layout = html.Div([
                 hidden=True, contextMenu='Help', style=dict(backgroundColor='Black')),
     html.H6('Cold Flow Pressure Test'),
     html.Button('Check System', id='checkbutton', n_clicks=0),
-    html.P('idle', id='checkoutput'),
-    html.P('idle', id='coldflowoutput'),
+    html.Div('idle', id='checkoutput'),
+    html.Div('idle', id='coldflowoutput'),
     html.Button('Save', id='savebutton', n_clicks=0),
     html.Button('Cold Flow', id='coldflow', n_clicks=0),
     html.Div(id='save_data'),
@@ -126,7 +126,7 @@ def read_temp_fill(n_intervals):
      Output(component_id='empty_graph', component_property='extendData')],
     [Input(component_id='pressure', component_property='children'),
      Input(component_id='time_pres', component_property='children'),
-     Input(component_id='fill_empty', component_property='children'),
+     Input(component_id='temp_fill', component_property='children'),
      Input(component_id='time_fill', component_property='children'),
      Input(component_id='temp_empty', component_property='children'),
      Input(component_id='time_empty', component_property='children')])
@@ -141,135 +141,137 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty, 
     Output('checkoutput', 'children'),
     [Input('checkbutton', 'n_clicks')]
 )
-def check_system():
-    print("Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
-    print("------------------------------------------")
-    print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
-    print("""\
+def check_system(n_clicks):
+    if n_clicks > 0:
+        print("Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
+        print("------------------------------------------")
+        print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
+        print("""\
+    
+                           ._ o o
+                           \_`-)|_
+                        ,""       \ 
+                      ,"  ## |   ಠ ಠ. 
+                    ," ##   ,-\__    `.
+                  ,"       /     `--._;)
+                ,"     ## /
+              ,"   ##    /
+    
+    
+                """)
+        print("------------------------------------------\n")
+        input("Press Enter to Start the Cold Flow Test:")
 
-                       ._ o o
-                       \_`-)|_
-                    ,""       \ 
-                  ,"  ## |   ಠ ಠ. 
-                ," ##   ,-\__    `.
-              ,"       /     `--._;)
-            ,"     ## /
-          ,"   ##    /
-
-
-            """)
-    print("------------------------------------------\n")
-    input("Press Enter to Start the Cold Flow Test:")
-
-    print("\nVerifying Sensor and Valve Connections\n")
-    while not pressure_cold_flow.verify_connection() and temperature_fill_line.verify_connection() \
-            and temperature_empty_line.verify_connection():
-        input("\nPress Enter to Start Verification Again:")
-    print("\nAll Sensors are Functional\n")
-
-    while not lox_main.verify_connection_valve and lox_vent.verify_connection_valve and \
-            met_vent.verify_connection_valve and p_valve.verify_connection_valve:
-        input("\nPress Enter to Start Verification Again:")
-    print("\nAll Valves are Functional\n")
-    print("\nVerification Complete, Press Enter to Continue:\n")
-
-    print("\nBeginning Opening of Solenoid Valves\n")
-    while True:
-        try:
-            lox_vent.open()
-            met_vent.open()
-            p_valve.open()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+        print("\nVerifying Sensor and Valve Connections\n")
+        while not pressure_cold_flow.verify_connection() and temperature_fill_line.verify_connection() \
+                and temperature_empty_line.verify_connection():
             input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHave all Solenoids opened? (yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    print("\nVerification Complete, Press Enter to Continue:\n")
+        print("\nAll Sensors are Functional\n")
 
-    print("\nBeginning Closing of Solenoid Valves\n")
-    while True:
-        try:
-            lox_vent.close()
-            met_vent.close()
-            p_valve.close()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+        while not lox_main.verify_connection_valve and lox_vent.verify_connection_valve and \
+                met_vent.verify_connection_valve and p_valve.verify_connection_valve:
             input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHave all Solenoids Closed? (yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    print("\nVerification Complete, Press Enter to Continue:\n")
+        print("\nAll Valves are Functional\n")
+        print("\nVerification Complete, Press Enter to Continue:\n")
 
-    print("\nBeginning Opening of Actuator Valve\n")
-    while True:
-        try:
-            percentage = 100
-            lox_main.open()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-            input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHas the Actuator Opened (yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    while True:
-        try:
-            percentage = 5
-            lox_main.open()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-            input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHas the Actuator Opened 5% (yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    while True:
-        try:
-            percentage = 50
-            lox_main.open()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-            input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHas the Actuator Opened Selected percentage(yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    print("\nVerification Complete, Press Enter to Continue:\n")
+        print("\nBeginning Opening of Solenoid Valves\n")
+        while True:
+            try:
+                lox_vent.open()
+                met_vent.open()
+                p_valve.open()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHave all Solenoids opened? (yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        print("\nVerification Complete, Press Enter to Continue:\n")
 
-    print("\nBeginning Opening of Actuator Valve\n")
-    while True:
-        try:
-            lox_main.close()
-        except Exception:
-            print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-            input("\nPress Enter to Start Verification Again:")
-            continue
-        else:
-            while True:
-                verification = input('\nHas the Actuator Closed (yes/no)?\n')
-                if verification == 'yes' or 'Yes':
-                    break
-    return 'System Check Successful'
+        print("\nBeginning Closing of Solenoid Valves\n")
+        while True:
+            try:
+                lox_vent.close()
+                met_vent.close()
+                p_valve.close()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHave all Solenoids Closed? (yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        print("\nVerification Complete, Press Enter to Continue:\n")
+
+        print("\nBeginning Opening of Actuator Valve\n")
+        while True:
+            try:
+                percentage = 100
+                lox_main.open()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHas the Actuator Opened (yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        while True:
+            try:
+                percentage = 5
+                lox_main.open()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHas the Actuator Opened 5% (yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        while True:
+            try:
+                percentage = 50
+                lox_main.open()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHas the Actuator Opened Selected percentage(yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        print("\nVerification Complete, Press Enter to Continue:\n")
+
+        print("\nBeginning Opening of Actuator Valve\n")
+        while True:
+            try:
+                lox_main.close()
+            except Exception:
+                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                input("\nPress Enter to Start Verification Again:")
+                continue
+            else:
+                while True:
+                    verification = input('\nHas the Actuator Closed (yes/no)?\n')
+                    if verification == 'yes' or 'Yes':
+                        break
+        return 'System Check Successful'
 
 @app.callback(
     Output('coldflowoutput', 'children'),
     [Input('coldflow', 'n_clicks')]
 )
-def cold_flow_initiate():
-    return 'Successful Cold Flow'
+def cold_flow_initiate(n_clicks):
+    if n_clicks > 0:
+        return 'Successful Cold Flow'
 
 
 # @app.callback(
