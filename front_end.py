@@ -2,7 +2,7 @@ import time
 import pandas as pd
 import csv
 from sensors_test import Sensor
-from valve import Valve
+# from valve import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -11,23 +11,26 @@ import dash_daq as daq
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Valve Definition and Classes
-lox_main = Valve('LOX Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
-lox_vent = Valve('LOX Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-met_vent = Valve('Methane Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-p_valve = Valve('Pressurant Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+# # Valve Definition and Classes
+# lox_main = Valve('LOX Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
+# lox_vent = Valve('LOX Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+# met_vent = Valve('Methane Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+# p_valve = Valve('Pressurant Valve', 'P8_12', 0, 'Solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
-pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
+pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
+                            'P9_16', '000', '000', '000')
 
 # Temperature Sensor Definition and Classes
-temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
-temperature_empty_line = Sensor('temperature_empty_line', 'temperature', 'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
+temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
+                               'P9_14', 'P9_16', '000', '000', '000')
+temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
+                                'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
                        xaxis=dict(autorange=False, range=[0, 60]),
-                       yaxis=dict(autorange=False, range=[0, 110]))
+                       yaxis=dict(autorange=False, range=[0, 200]))
 layout_temperature = dict(title=dict(text='Live Temperature'),
                           xaxis=dict(autorange=False, range=[0, 60]),
                           yaxis=dict(autorange=False, range=[-220, 80]))
@@ -40,7 +43,8 @@ temperature_fig_empty = dict(data=data, layout=layout_temperature)
 app = dash.Dash(__name__)
 app.layout = html.Div([
     html.Dialog(id='box2', children=[html.P('Test'), html.H1('Big')],
-                hidden=True, contextMenu='Help', style=dict(backgroundColor='Black')),
+                hidden=True, contextMenu='Help',
+                style=dict(backgroundColor='Black')),
     html.H6('Cold Flow Pressure Test'),
     html.Button('Check System', id='checkbutton', n_clicks=0),
     html.Div('idle', id='checkoutput'),
@@ -77,7 +81,7 @@ app.layout = html.Div([
     dcc.Graph(id='empty_graph', figure=temperature_fig_empty, animate=True),
     # SET INTERVAL = 0 FOR ACTUAL TEST
     dcc.Interval(id='interval-component',
-                 interval=00.1 * 1000,
+                 interval=0.1 * 1000,
                  n_intervals=0),
 
     # Hidden DIV
@@ -92,29 +96,18 @@ app.layout = html.Div([
 
 @app.callback(
     [Output('pressure', 'children'),
-     Output('time_pres', 'children')],
-    [Input('interval-component', 'n_intervals')]
-)
-def read_press(n_intervals):
-    return pressure_cold_flow.read_sensor()
-
-
-@app.callback(
-    [Output('temp_fill', 'children'),
-     Output('time_fill', 'children')],
-    [Input('interval-component', 'n_intervals')]
-)
-def read_temp_fill(n_intervals):
-    return temperature_fill_line.read_sensor()
-
-
-@app.callback(
-    [Output('temp_empty', 'children'),
+     Output('time_pres', 'children'),
+     Output('temp_fill', 'children'),
+     Output('time_fill', 'children'),
+     Output('temp_empty', 'children'),
      Output('time_empty', 'children')],
     [Input('interval-component', 'n_intervals')]
 )
-def read_temp_fill(n_intervals):
-    return temperature_empty_line.read_sensor()
+def read(n_intervals):
+    pres, time_pres = pressure_cold_flow.read_sensor()
+    temp_fill, time_fill = temperature_fill_line.read_sensor()
+    temp_empty, time_empty = temperature_empty_line.read_sensor()
+    return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty
 
 
 @app.callback(
@@ -130,7 +123,8 @@ def read_temp_fill(n_intervals):
      Input(component_id='time_fill', component_property='children'),
      Input(component_id='temp_empty', component_property='children'),
      Input(component_id='time_empty', component_property='children')])
-def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty, time_empty):
+def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
+                         time_empty):
     data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
     data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
     data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
@@ -143,7 +137,8 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty, 
 )
 def check_system(n_clicks):
     if n_clicks > 0:
-        print("Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
+        print(
+            "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
         print("------------------------------------------")
         print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
         print("""\
@@ -181,12 +176,14 @@ def check_system(n_clicks):
                 met_vent.open()
                 p_valve.open()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHave all Solenoids opened? (yes/no)?\n')
+                    verification = input(
+                        '\nHave all Solenoids opened? (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
@@ -198,12 +195,14 @@ def check_system(n_clicks):
                 met_vent.close()
                 p_valve.close()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHave all Solenoids Closed? (yes/no)?\n')
+                    verification = input(
+                        '\nHave all Solenoids Closed? (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
@@ -214,12 +213,14 @@ def check_system(n_clicks):
                 percentage = 100
                 lox_main.open()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHas the Actuator Opened (yes/no)?\n')
+                    verification = input(
+                        '\nHas the Actuator Opened (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         while True:
@@ -227,12 +228,14 @@ def check_system(n_clicks):
                 percentage = 5
                 lox_main.open()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHas the Actuator Opened 5% (yes/no)?\n')
+                    verification = input(
+                        '\nHas the Actuator Opened 5% (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         while True:
@@ -240,12 +243,14 @@ def check_system(n_clicks):
                 percentage = 50
                 lox_main.open()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHas the Actuator Opened Selected percentage(yes/no)?\n')
+                    verification = input(
+                        '\nHas the Actuator Opened Selected percentage(yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
@@ -255,15 +260,18 @@ def check_system(n_clicks):
             try:
                 lox_main.close()
             except Exception:
-                print("\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
+                print(
+                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
                 input("\nPress Enter to Start Verification Again:")
                 continue
             else:
                 while True:
-                    verification = input('\nHas the Actuator Closed (yes/no)?\n')
+                    verification = input(
+                        '\nHas the Actuator Closed (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
                         break
         return 'System Check Successful'
+
 
 @app.callback(
     Output('coldflowoutput', 'children'),
@@ -292,5 +300,5 @@ def update_saved_data(n_clicks):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host="0.0.0.0")
+    app.run_server(debug=True)
     # 192.168.7.2

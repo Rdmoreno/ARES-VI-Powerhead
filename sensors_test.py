@@ -5,8 +5,6 @@ import time
 from csv import reader
 import pandas as pd
 import numpy as np
-import Adafruit_BBIO.GPIO as GPIO
-import spidev
 from random import randint
 
 
