@@ -40,46 +40,33 @@ pressure_fig = dict(data=data, layout=layout_pressure)
 temperature_fig_fill = dict(data=data, layout=layout_temperature)
 temperature_fig_empty = dict(data=data, layout=layout_temperature)
 
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__)
+external_stylesheets = ['s1.css', 'style2.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div([
     html.Dialog(id='box2', children=[html.P('Test'), html.H1('Big')],
                 hidden=True, contextMenu='Help',
                 style=dict(backgroundColor='Black')),
-    html.H6('Cold Flow Pressure Test'),
-    html.Button('Check System', id='checkbutton', n_clicks=0),
-    html.Div('idle', id='checkoutput'),
-    html.Div('idle', id='coldflowoutput'),
-    html.Button('Save', id='savebutton', n_clicks=0),
-    html.Button('Cold Flow', id='coldflow', n_clicks=0),
-    html.Div(id='save_data'),
-    daq.Gauge(
-        showCurrentValue=True,
-        id='pressure_gauge',
-        units='PSI',
-        label='Pressure Sensors at Location',
-        min=0,
-        max=300,
-        value=0),
-    daq.Gauge(
-        showCurrentValue=True,
-        id='fill_gauge',
-        units='C',
-        label='Temperature at Fill Line',
-        min=-220,
-        max=80,
-        value=0),
-    daq.Gauge(
-        showCurrentValue=True,
-        id='empty_gauge',
-        units='C',
-        label='Temperature at Empty Line',
-        min=-220,
-        max=80,
-        value=0),
-    dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
-    dcc.Graph(id='fill_graph', figure=temperature_fig_fill, animate=True),
-    dcc.Graph(id='empty_graph', figure=temperature_fig_empty, animate=True),
+    html.Div([
+        html.H3('Cold Flow Pressure Test'),
+        html.Button('Check System', id='checkbutton', n_clicks=0),
+        html.Div('idle', id='checkoutput'),
+        html.Div('idle', id='coldflowoutput'),
+        html.Button('Save', id='savebutton', n_clicks=0),
+        html.Button('Cold Flow', id='coldflow', n_clicks=0),
+        html.Div(id='save_data')], className='pretty_container four columns'),
+    html.Div([
+        html.Div(dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
+                 className="pretty_container"),
+        html.Div(dcc.Graph(id='fill_graph', figure=temperature_fig_fill, animate=True),
+                 className="pretty_container"),
+        html.Div(dcc.Graph(id='empty_graph', figure=temperature_fig_empty, animate=True),
+                 className="pretty_container")
+        ],
+        className='twelve columns'),
+
+
+
     # SET INTERVAL = 0 FOR ACTUAL TEST
     dcc.Interval(id='interval-component',
                  interval=0.1 * 1000,
@@ -92,7 +79,7 @@ app.layout = html.Div([
     html.Div(id='time_fill', style={'display': 'none'}),
     html.Div(id='temp_empty', style={'display': 'none'}),
     html.Div(id='time_empty', style={'display': 'none'}),
-])
+], className='row flex-display')
 
 
 @app.callback(
@@ -112,11 +99,8 @@ def read(n_intervals):
 
 
 @app.callback(
-    [Output(component_id='pressure_gauge', component_property='value'),
-     Output(component_id='pres_graph', component_property='extendData'),
-     Output(component_id='fill_gauge', component_property='value'),
+    [Output(component_id='pres_graph', component_property='extendData'),
      Output(component_id='fill_graph', component_property='extendData'),
-     Output(component_id='empty_gauge', component_property='value'),
      Output(component_id='empty_graph', component_property='extendData')],
     [Input(component_id='pressure', component_property='children'),
      Input(component_id='time_pres', component_property='children'),
@@ -129,7 +113,7 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
     data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
     data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
     data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
-    return pressure, data_pres, temp_fill, data_fill, temp_empty, data_empty
+    return data_pres, data_fill, data_empty
 
 
 @app.callback(
@@ -139,7 +123,8 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
 def check_system(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'checkbutton' in changed_id:
-        print("Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
+        print(
+            "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
         print("------------------------------------------")
         print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
         print("""\
