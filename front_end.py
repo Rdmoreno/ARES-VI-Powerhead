@@ -8,6 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_daq as daq
+from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -136,9 +137,9 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
     [Input('checkbutton', 'n_clicks')]
 )
 def check_system(n_clicks):
-    if n_clicks > 0:
-        print(
-            "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'checkbutton' in changed_id:
+        print("Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
         print("------------------------------------------")
         print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
         print("""\
@@ -271,6 +272,8 @@ def check_system(n_clicks):
                     if verification == 'yes' or 'Yes':
                         break
         return 'System Check Successful'
+    else:
+        raise PreventUpdate
 
 
 @app.callback(
@@ -299,7 +302,7 @@ def update_saved_data(n_clicks, pressure_values):
         print(pressure_values)
         return 'Ouput: {}'.format('Saved')
     else:
-        return 'Ouput: {}'.format('Not Saved')
+        raise PreventUpdate
 
 
 if __name__ == '__main__':
