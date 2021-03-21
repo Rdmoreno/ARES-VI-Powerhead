@@ -291,12 +291,15 @@ def cold_flow_initiate(n_clicks):
 
 @app.callback(
     Output(component_id='save_data', component_property='children'),
-    [Input(component_id='savebutton', component_property='n_clicks')])
-def update_saved_data(n_clicks):
-    if n_clicks > 0:
-        pressure_test.save_data()
+    [Input(component_id='savebutton', component_property='n_clicks'),
+     Input(component_id='pressure', component_property='children')])
+def update_saved_data(n_clicks, pressure_values):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'savebutton' in changed_id:
+        print(pressure_values)
         return 'Ouput: {}'.format('Saved')
-    return 'Ouput: {}'.format('Not Saved')
+    else:
+        return 'Ouput: {}'.format('Not Saved')
 
 
 if __name__ == '__main__':
