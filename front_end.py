@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import csv
+from itertools import zip_longest
 from sensors_test import Sensor
 # from valve import Valve
 import dash
@@ -11,6 +12,14 @@ import dash_daq as daq
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objects as go
+
+# Data Frames for Saving
+pressure_list = ["Pressure"]
+pressure_time_list = ["time"]
+temperature_fill_list = ["Temperature Fill"]
+temperature_fill_time_list = ["time"]
+temperature_empty_list = ["Temperature Empty"]
+temperature_empty_time_list = ["time"]
 
 # # Valve Definition and Classes
 # lox_main = Valve('LOX Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
@@ -49,11 +58,11 @@ app.layout = html.Div([
                 style=dict(backgroundColor='Black')),
     html.Div([
         html.H3('Cold Flow Pressure Test'),
+        html.Button('Save', id='savebutton', n_clicks=0),
         html.Button('Check System', id='checkbutton', n_clicks=0),
+        html.Button('Cold Flow', id='coldflow', n_clicks=0),
         html.Div('idle', id='checkoutput'),
         html.Div('idle', id='coldflowoutput'),
-        html.Button('Save', id='savebutton', n_clicks=0),
-        html.Button('Cold Flow', id='coldflow', n_clicks=0),
         html.Div(id='save_data')], className='pretty_container four columns'),
     html.Div([
         html.Div(dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
@@ -113,6 +122,14 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
     data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
     data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
     data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
+
+    pressure_list.append(pressure)
+    pressure_time_list.append(time_pres)
+    temperature_fill_list.append(temp_fill)
+    temperature_fill_time_list.append(time_fill)
+    temperature_empty_list.append(temp_empty)
+    temperature_empty_time_list.append(time_empty)
+
     return data_pres, data_fill, data_empty
 
 
@@ -279,12 +296,17 @@ def cold_flow_initiate(n_clicks):
 
 @app.callback(
     Output(component_id='save_data', component_property='children'),
-    [Input(component_id='savebutton', component_property='n_clicks'),
-     Input(component_id='pressure', component_property='children')])
-def update_saved_data(n_clicks, pressure_values):
+    [Input(component_id='savebutton', component_property='n_clicks')])
+def update_saved_data(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'savebutton' in changed_id:
-        print(pressure_values)
+        saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
+                               temperature_empty_list, temperature_empty_time_list]
+        export_data = zip_longest(*saved_data_combined, fillvalue='')
+        with open('data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
+            wr = csv.writer(myfile)
+            wr.writerows(export_data)
+        myfile.close()
         return 'Ouput: {}'.format('Saved')
     else:
         raise PreventUpdate
