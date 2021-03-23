@@ -58,6 +58,8 @@ app.layout = html.Div([
                 style=dict(backgroundColor='Black')),
     html.Div([
         html.H3('Cold Flow Pressure Test'),
+        html.Button('Start', id='startbutton', n_clicks=0),
+        html.Button('Stop', id= 'stopbutton', n_clicks=0),
         html.Button('Save', id='savebutton', n_clicks=0),
         html.Button('Check System', id='checkbutton', n_clicks=0),
         html.Button('Cold Flow', id='coldflow', n_clicks=0),
@@ -98,14 +100,18 @@ app.layout = html.Div([
      Output('time_fill', 'children'),
      Output('temp_empty', 'children'),
      Output('time_empty', 'children')],
-    [Input('interval-component', 'n_intervals')]
+    [Input('interval-component', 'n_intervals'),
+     Input('startbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')]
 )
-def read(n_intervals):
-    pres, time_pres = pressure_cold_flow.read_sensor()
-    temp_fill, time_fill = temperature_fill_line.read_sensor()
-    temp_empty, time_empty = temperature_empty_line.read_sensor()
-    return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty
-
+def read(n_intervals, n_clicks, m_clicks):
+    if n_clicks > 0 and m_clicks == 0:
+        pres, time_pres = pressure_cold_flow.read_sensor()
+        temp_fill, time_fill = temperature_fill_line.read_sensor()
+        temp_empty, time_empty = temperature_empty_line.read_sensor()
+        return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty
+    else:
+        raise PreventUpdate
 
 @app.callback(
     [Output(component_id='pres_graph', component_property='extendData'),
@@ -116,21 +122,27 @@ def read(n_intervals):
      Input(component_id='temp_fill', component_property='children'),
      Input(component_id='time_fill', component_property='children'),
      Input(component_id='temp_empty', component_property='children'),
-     Input(component_id='time_empty', component_property='children')])
+     Input(component_id='time_empty', component_property='children'),
+     Input('startbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')])
 def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
-                         time_empty):
-    data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
-    data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
-    data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
+                         time_empty, n_clicks, m_clicks):
+    if n_clicks > 0 and m_clicks == 0:
 
-    pressure_list.append(pressure)
-    pressure_time_list.append(time_pres)
-    temperature_fill_list.append(temp_fill)
-    temperature_fill_time_list.append(time_fill)
-    temperature_empty_list.append(temp_empty)
-    temperature_empty_time_list.append(time_empty)
+        data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
+        data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
+        data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
 
-    return data_pres, data_fill, data_empty
+        pressure_list.append(pressure)
+        pressure_time_list.append(time_pres)
+        temperature_fill_list.append(temp_fill)
+        temperature_fill_time_list.append(time_fill)
+        temperature_empty_list.append(temp_empty)
+        temperature_empty_time_list.append(time_empty)
+
+        return data_pres, data_fill, data_empty
+    else:
+        raise PreventUpdate
 
 
 @app.callback(
@@ -283,8 +295,11 @@ def check_system(n_clicks):
     [Input('coldflow', 'n_clicks')]
 )
 def cold_flow_initiate(n_clicks):
-    if n_clicks > 0:
-        return 'Successful Cold Flow'
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'checkbutton' in changed_id:
+        return 'Cold Flow Start Successful'
+    else:
+        raise PreventUpdate
 
 
 # @app.callback(
