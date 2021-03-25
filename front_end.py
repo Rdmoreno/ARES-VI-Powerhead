@@ -327,24 +327,24 @@ def update_saved_data(n_clicks):
     else:
         raise PreventUpdate
 
-@app.callback(
-    Output(component_id='pressurerelief', component_property='children'),
-    [Input(component_id='pressure', component_property='children')])
-def relief_pressure_check(pressure):
-    maximum_pressure = 200
-    if pressure >= maximum_pressure:
-        time_relief = time.time()
-        print('Pressure Exceeded Maximum: Opening Relief Valve')
-        print(time_relief)
-        while pressure >= maximum_pressure:
-            lox_vent.open()
-            if pressure < maximum_pressure:
-                time_relief_end = time.time()
-                lox_vent.close()
-                print(time_relief_end)
-                return 'Ouput: {}'.format('Pressure has returned to nominal value')
-    else:
-        raise PreventUpdate
+#@app.callback(
+#    Output(component_id='pressurerelief', component_property='children'),
+#    [Input(component_id='pressure', component_property='children')])
+#def relief_pressure_check(pressure):
+#    maximum_pressure = 200
+#    if pressure >= maximum_pressure:
+#        time_relief = time.time()
+#        print('Pressure Exceeded Maximum: Opening Relief Valve')
+#        print(time_relief)
+#        while pressure >= maximum_pressure:
+#            lox_vent.open()
+#            if pressure < maximum_pressure:
+#                time_relief_end = time.time()
+#                lox_vent.close()
+#                print(time_relief_end)
+#                return 'Ouput: {}'.format('Pressure has returned to nominal value')
+#    else:
+#        raise PreventUpdate
 
 
 if __name__ == '__main__':
