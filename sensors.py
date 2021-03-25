@@ -110,10 +110,20 @@ class Sensor:
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
             data_conversion = int(raw_data[4:], 2) / 4095 * 5000
-            processed_data[x] = data_conversion
+
+            if self.type == 'P9_12':
+                data_corrected = int(0.9889 * data_conversion + 1.0076)
+            elif self.type == 'P9_14':
+                data_corrected = int(0.986 * data_conversion + 8.6774)
+            elif self.type == 'P9_16':
+                data_corrected = int(0.9946 * data_conversion + 1.8596)
+            else:
+                data_corrected = data_conversion
+            processed_data[x] = data_corrected
 
             spi.close()
             GPIO.output(self.pins[x], GPIO.HIGH)
+
         return processed_data
 
     # noinspection PyMethodMayBeStatic

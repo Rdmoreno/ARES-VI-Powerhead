@@ -62,9 +62,10 @@ app.layout = html.Div([
         html.Button('Stop', id= 'stopbutton', n_clicks=0),
         html.Button('Save', id='savebutton', n_clicks=0),
         html.Button('Check System', id='checkbutton', n_clicks=0),
-        html.Button('Cold Flow', id='coldflow', n_clicks=0),
+        html.Button('Cold Flow', id='coldflowbutton', n_clicks=0),
         html.Div('idle', id='checkoutput'),
         html.Div('idle', id='coldflowoutput'),
+        html.Div('idle', id='pressurerelief'),
         html.Div(id='save_data')], className='pretty_container four columns'),
     html.Div([
         html.Div(dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
@@ -292,11 +293,11 @@ def check_system(n_clicks):
 
 @app.callback(
     Output('coldflowoutput', 'children'),
-    [Input('coldflow', 'n_clicks')]
+    [Input('coldflowbutton', 'n_clicks')]
 )
 def cold_flow_initiate(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'checkbutton' in changed_id:
+    if 'coldflowbutton' in changed_id:
         return 'Cold Flow Start Successful'
     else:
         raise PreventUpdate
@@ -323,6 +324,25 @@ def update_saved_data(n_clicks):
             wr.writerows(export_data)
         myfile.close()
         return 'Ouput: {}'.format('Saved')
+    else:
+        raise PreventUpdate
+
+@app.callback(
+    Output(component_id='pressurerelief', component_property='children'),
+    [Input(component_id='pressure', component_property='children')])
+def relief_pressure_check(pressure):
+    maximum_pressure = 200
+    if pressure >= maximum_pressure:
+        time_relief = time.time()
+        print('Pressure Exceeded Maximum: Opening Relief Valve')
+        print(time_relief)
+        while pressure >= maximum_pressure:
+            lox_vent.open()
+            if pressure < maximum_pressure:
+                time_relief_end = time.time()
+                lox_vent.close()
+                print(time_relief_end)
+                return 'Ouput: {}'.format('Pressure has returned to nominal value')
     else:
         raise PreventUpdate
 
