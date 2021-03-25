@@ -2,7 +2,7 @@ import time
 import pandas as pd
 import csv
 from itertools import zip_longest
-from sensors_test import Sensor
+from sensors import Sensor
 # from valve import Valve
 import dash
 import dash_core_components as dcc
@@ -39,11 +39,11 @@ temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
-                       xaxis=dict(autorange=False, range=[0, 60]),
-                       yaxis=dict(autorange=False, range=[0, 200]))
+                       xaxis=dict(autorange=True, range=[0, 60]),
+                       yaxis=dict(autorange=True, range=[0, 200]))
 layout_temperature = dict(title=dict(text='Live Temperature'),
-                          xaxis=dict(autorange=False, range=[0, 60]),
-                          yaxis=dict(autorange=False, range=[-220, 80]))
+                          xaxis=dict(autorange=True, range=[0, 60]),
+                          yaxis=dict(autorange=True, range=[-220, 80]))
 
 pressure_fig = dict(data=data, layout=layout_pressure)
 temperature_fig_fill = dict(data=data, layout=layout_temperature)
@@ -79,9 +79,9 @@ app.layout = html.Div([
 
 
 
-    # SET INTERVAL = 0 FOR ACTUAL TEST
+    # SET INTERVAL = 0 FOR ACTUAL TEST interval=0.1 * 1000
     dcc.Interval(id='interval-component',
-                 interval=0.1 * 1000,
+                 interval=0,
                  n_intervals=0),
 
     # Hidden DIV
@@ -348,5 +348,5 @@ def relief_pressure_check(pressure):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='192.168.7.2')
     # 192.168.7.2

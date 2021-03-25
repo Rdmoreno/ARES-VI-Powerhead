@@ -1,9 +1,9 @@
 # Valve Module
-# Legacy module from Greg Liesen (ARES V 2019-2020)
 import Adafruit_BBIO.GPIO as GPIO
 from smbus2 import SMBus, i2c_msg
 import pandas as pd
 import time
+import Adafruit_MCP4725
 
 
 class Valve:
@@ -48,9 +48,11 @@ class Valve:
         if self.type == 'Solenoid':
             GPIO.output(self.pin0, GPIO.LOW)
         else:
-            with SMBus(2) as bus:
-                msg = i2c_msg.write(self.device, [0, 0])
-                bus.i2c_rdwr(msg)
+            dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
+            dac.set_voltage(0)
+            #with SMBus(2) as bus:
+                #msg = i2c_msg.write(self.device, [64, 0, 0])
+                #bus.i2c_rdwr(msg)
         self.state = 'Closed'
         self.df = pd.DataFrame([[t, 0]], columns=['time', 'position'])
 
@@ -65,13 +67,17 @@ class Valve:
 
         t = time.process_time()
         if self.type != 'Solenoid':
-            with SMBus(2) as bus:
-                percentage_calc = 4095 * (self.partial/100)
-                rounded_percentage = round(percentage_calc)
-                byte_1 = (rounded_percentage >> 8) & 0xff
-                byte_2 = rounded_percentage & 0xff
-                msg = i2c_msg.write(self.device, [byte_1, byte_2])
-                bus.i2c_rdwr(msg)
+            dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
+            percentage_calc = 4096 * (self.partial / 100)
+            rounded_percentage = round(percentage_calc)
+            dac.set_voltage(rounded_percentage)
+            # with SMBus(2) as bus:
+                # percentage_calc = 4095 * (self.partial/100)
+                # rounded_percentage = round(percentage_calc)
+                # byte_1 = (rounded_percentage >> 4)
+                #  = (rounded_percentage & 15) << 4
+                # msg = i2c_msg.write(self.device, [byte_1, byte_2])
+                # bus.i2c_rdwr(msg)
             self.state = 'Partially Opened'
         self.df = pd.DataFrame([[t, 0.1]], columns=['time', 'position'])
 
@@ -88,9 +94,11 @@ class Valve:
         if self.type == 'Solenoid':
             GPIO.output(self.pin0, GPIO.HIGH)
         else:
-            with SMBus(2) as bus:
-                msg = i2c_msg.write(self.device, [15, 255])
-                bus.i2c_rdwr(msg)
+            dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
+            dac.set_voltage(4096)
+            #with SMBus(2) as bus:
+                #msg = i2c_msg.write(self.device, [64, 255, 240])
+                #bus.i2c_rdwr(msg)
         self.state = 'Open'
         self.df = pd.DataFrame([[t, 1]], columns=['time', 'position'])
 

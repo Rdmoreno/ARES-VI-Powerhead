@@ -44,13 +44,12 @@ class Sensor:
         self.channel2 = given_channel1
         self.channel3 = given_channel2
         self.channel = [given_channel0, given_channel1, given_channel2]
-        if self.type == 'pressure' or 'temperature':
-            GPIO.setup(given_pin0, GPIO.OUT)
-            GPIO.output(given_pin0, GPIO.HIGH)
-            GPIO.setup(given_pin1, GPIO.OUT)
-            GPIO.output(given_pin1, GPIO.HIGH)
-            GPIO.setup(given_pin2, GPIO.OUT)
-            GPIO.output(given_pin2, GPIO.HIGH)
+        GPIO.setup(given_pin0, GPIO.OUT)
+        GPIO.output(given_pin0, GPIO.HIGH)
+        GPIO.setup(given_pin1, GPIO.OUT)
+        GPIO.output(given_pin1, GPIO.HIGH)
+        GPIO.setup(given_pin2, GPIO.OUT)
+        GPIO.output(given_pin2, GPIO.HIGH)
 
     def read_sensor(self):
         """
@@ -68,6 +67,7 @@ class Sensor:
 
         processed_data = self.adc_reading()
         volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
+        print(np.sum(volts)/len(volts))
         # Converts all pressure sensor readings from volts to psi
         data_unit = self.volt_to_unit(volts)
         avg = self.vote(data_unit)
@@ -109,21 +109,12 @@ class Sensor:
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            data_conversion = int(raw_data[4:], 2) / 4095 * 5000
-
-            if self.type == 'P9_12':
-                data_corrected = int(0.9889 * data_conversion + 1.0076)
-            elif self.type == 'P9_14':
-                data_corrected = int(0.986 * data_conversion + 8.6774)
-            elif self.type == 'P9_16':
-                data_corrected = int(0.9946 * data_conversion + 1.8596)
-            else:
-                data_corrected = data_conversion
-            processed_data[x] = data_corrected
+            reference_voltage = 4870
+            data_conversion = (int(raw_data[4:], 2) / 4095 * reference_voltage)
+            processed_data[x] = data_conversion
 
             spi.close()
             GPIO.output(self.pins[x], GPIO.HIGH)
-
         return processed_data
 
     # noinspection PyMethodMayBeStatic
@@ -186,7 +177,7 @@ class Sensor:
         if self.type == 'pressure':
             temps = (temps / 100) * 1000
         else:
-            temps = (temps - np.array([1.25, 1.25, 1.25])) / 5
+            temps = (temps - np.array([1250, 1250, 1250])) / 5
         return temps
 
     def reference_volt_conversion(self, temps):
