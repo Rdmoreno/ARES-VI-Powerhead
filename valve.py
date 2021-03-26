@@ -49,7 +49,9 @@ class Valve:
             GPIO.output(self.pin0, GPIO.LOW)
         else:
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
-            dac.set_voltage(0)
+            percentage_calc = 4095 * .1509434
+            rounded_percentage = round(percentage_calc)
+            dac.set_voltage(rounded_percentage)
             #with SMBus(2) as bus:
                 #msg = i2c_msg.write(self.device, [64, 0, 0])
                 #bus.i2c_rdwr(msg)
@@ -68,7 +70,7 @@ class Valve:
         t = time.process_time()
         if self.type != 'Solenoid':
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
-            percentage_calc = 4096 * (self.partial / 100)
+            percentage_calc = 4095 * (.60377358 * (self.partial / 100) + .1509434)
             rounded_percentage = round(percentage_calc)
             dac.set_voltage(rounded_percentage)
             # with SMBus(2) as bus:
@@ -95,7 +97,9 @@ class Valve:
             GPIO.output(self.pin0, GPIO.HIGH)
         else:
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
-            dac.set_voltage(4096)
+            percentage_calc = 4095 * 0.75471698
+            rounded_percentage = round(percentage_calc)
+            dac.set_voltage(rounded_percentage)
             #with SMBus(2) as bus:
                 #msg = i2c_msg.write(self.device, [64, 255, 240])
                 #bus.i2c_rdwr(msg)

@@ -95,7 +95,7 @@ class Sensor:
             spi.open(0, 0)
             spi.mode = 0
             spi.bits_per_word = 8
-            spi.max_speed_hz = 1000000
+            spi.max_speed_hz = 2000000
 
             if self.type == 'pressure':
                 bit_mode = '0'

@@ -3,6 +3,9 @@ import time
 from sensors_test import Sensor
 from valve import Valve
 from itertools import zip_longest
+import sys
+import os
+import fcntl
 
 time_duration = 86400
 
@@ -37,6 +40,59 @@ with open('leak_data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
     wr = csv.writer(myfile)
     wr.writerows(export_data)
 myfile.close()
+
+print('Welcome to the Team Daedalus: Leak Test')
+input('Please Press Enter to Confirm Start')
+print('Starting System Check')
+print()
+print("\nVerifying Sensor and Valve Connections\n")
+while not pressure_cold_flow.verify_connection() and temperature_fill_line.verify_connection() \
+        and temperature_empty_line.verify_connection():
+    input("\nPress Enter to Start Verification Again:")
+print("\nAll Sensors are Functional\n")
+while not lox_main.verify_connection_valve and lox_vent.verify_connection_valve and \
+        met_vent.verify_connection_valve and p_valve.verify_connection_valve:
+    input("\nPress Enter to Start Verification Again:")
+print("\nAll Valves are Functional\n")
+print("\nVerification Complete, Press Enter to Continue:\n")
+
+print()
+print('Closing All Valves')
+lox_main.close()
+lox_vent.close()
+met_vent.close()
+p_valve.close()
+
+input('Press Enter to Open filling valve')
+print('Opening Fill Valve: Begin Filling Procedure')
+print('Press Enter to begin filling and Enter again to end filling')
+lox_main.open()
+
+maximum_pressure = 200
+nominal_pressure = 100
+
+fl = fcntl.fcntl(sys.stdin.fileno(), fcntl.F_GETFL)
+fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, fl | os.O_NONBLOCK)
+while True:
+    pressure = pressure_cold_flow.read_sensor()
+    print(pressure)
+    if pressure >= maximum_pressure:
+        time_relief = time.time()
+        print('Pressure Exceeded Maximum: Opening Relief Valve')
+        print(time_relief)
+        while pressure >= maximum_pressure:
+            lox_vent.open()
+            if pressure < maximum_pressure:
+                time_relief_end = time.time()
+                lox_vent.close()
+                print(time_relief_end)
+    try:
+        stdin = sys.stdin.read()
+        if "\n" in stdin or "\r" in stdin:
+            break
+    except IOError:
+        pass
+    time.sleep(1)
 
 time_start = time.time()
 
