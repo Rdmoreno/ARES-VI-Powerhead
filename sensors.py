@@ -67,9 +67,10 @@ class Sensor:
 
         processed_data = self.adc_reading()
         volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
-        print(np.sum(volts)/len(volts))
+        data_unit = volts
+        # print(np.sum(volts)/len(volts))
         # Converts all pressure sensor readings from volts to psi
-        data_unit = self.volt_to_unit(volts)
+        # data_unit = self.volt_to_unit(volts)
         avg = self.vote(data_unit)
 
         # Appends temporary data to sensor data array
