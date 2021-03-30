@@ -22,7 +22,7 @@ class Valve:
         self.pin0 = givenPin
         self.pin1 = givenPin2
         self.type = givenType
-        self.state = 'Error, no state given'
+        self.state = 'NULL'
         self.df = pd.DataFrame(columns=['time', 'position'])
         self.device = givenDevice
         self.partial = givenPartial
@@ -75,7 +75,7 @@ class Valve:
             Retrieve the current status of a specified pin and return it to the user.
         """
 
-        print(self.name, ' is ', self.state)
+        return '{}: {}'.format(self.name, self.state)
 
     def verify_connection_valve(self):
         """
