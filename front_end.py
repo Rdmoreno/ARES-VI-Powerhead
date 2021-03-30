@@ -2,8 +2,8 @@ import time
 import pandas as pd
 import csv
 from itertools import zip_longest
-from sensors import Sensor
-# from valve import Valve
+from sensors_test import Sensor
+from valve_test import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -22,10 +22,10 @@ temperature_empty_list = ["Temperature Empty"]
 temperature_empty_time_list = ["time"]
 
 # # Valve Definition and Classes
-# lox_main = Valve('LOX Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
-# lox_vent = Valve('LOX Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-# met_vent = Valve('Methane Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-# p_valve = Valve('Pressurant Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 100)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
@@ -68,6 +68,11 @@ app.layout = html.Div([
         html.Div('idle', id='pressurerelief'),
         html.Div(id='save_data')], className='pretty_container four columns'),
     html.Div([
+        html.Div([
+            html.Div('idle', id='pressoutput'),
+            html.Div('idle', id='filloutput'),
+            html.Div('idle', id='emptyoutput'),
+        ], className="pretty_container"),
         html.Div(dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
                  className="pretty_container"),
         html.Div(dcc.Graph(id='fill_graph', figure=temperature_fig_fill, animate=True),
@@ -81,7 +86,7 @@ app.layout = html.Div([
 
     # SET INTERVAL = 0 FOR ACTUAL TEST interval=0.1 * 1000
     dcc.Interval(id='interval-component',
-                 interval=0,
+                 interval=0.1*1000,
                  n_intervals=0),
 
     # Hidden DIV
@@ -104,7 +109,7 @@ app.layout = html.Div([
     [Input('interval-component', 'n_intervals'),
      Input('startbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')]
-)
+    )
 def read(n_intervals, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
         pres, time_pres = pressure_cold_flow.read_sensor()
@@ -117,7 +122,10 @@ def read(n_intervals, n_clicks, m_clicks):
 @app.callback(
     [Output(component_id='pres_graph', component_property='extendData'),
      Output(component_id='fill_graph', component_property='extendData'),
-     Output(component_id='empty_graph', component_property='extendData')],
+     Output(component_id='empty_graph', component_property='extendData'),
+     Output('pressoutput', 'children'),
+     Output('filloutput', 'children'),
+     Output('emptyoutput', 'children')],
     [Input(component_id='pressure', component_property='children'),
      Input(component_id='time_pres', component_property='children'),
      Input(component_id='temp_fill', component_property='children'),
@@ -141,7 +149,11 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
         temperature_empty_list.append(temp_empty)
         temperature_empty_time_list.append(time_empty)
 
-        return data_pres, data_fill, data_empty
+        pres_update = 'Current Pressure: {}'.format(pressure)
+        fill_update = 'Current Pressure: {}'.format(temp_fill)
+        empty_update = 'Current Pressure: {}'.format(temp_empty)
+
+        return data_pres, data_fill, data_empty, pres_update, fill_update, empty_update
     else:
         raise PreventUpdate
 
@@ -179,8 +191,8 @@ def check_system(n_clicks):
             input("\nPress Enter to Start Verification Again:")
         print("\nAll Sensors are Functional\n")
 
-        while not lox_main.verify_connection_valve and lox_vent.verify_connection_valve and \
-                met_vent.verify_connection_valve and p_valve.verify_connection_valve:
+        while not actuator_prop.verify_connection_valve and actuator_solenoid.verify_connection_valve and \
+                fill_valve.verify_connection_valve and vent_valve.verify_connection_valve:
             input("\nPress Enter to Start Verification Again:")
         print("\nAll Valves are Functional\n")
         print("\nVerification Complete, Press Enter to Continue:\n")
@@ -188,9 +200,9 @@ def check_system(n_clicks):
         print("\nBeginning Opening of Solenoid Valves\n")
         while True:
             try:
-                lox_vent.open()
-                met_vent.open()
-                p_valve.open()
+                vent_valve.open()
+                actuator_solenoid.open()
+                fill_valve.open()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -207,9 +219,9 @@ def check_system(n_clicks):
         print("\nBeginning Closing of Solenoid Valves\n")
         while True:
             try:
-                lox_vent.close()
-                met_vent.close()
-                p_valve.close()
+                vent_valve.close()
+                actuator_solenoid.close()
+                fill_valve.close()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -226,8 +238,7 @@ def check_system(n_clicks):
         print("\nBeginning Opening of Actuator Valve\n")
         while True:
             try:
-                percentage = 100
-                lox_main.open()
+                actuator_prop.open()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -241,8 +252,8 @@ def check_system(n_clicks):
                         break
         while True:
             try:
-                percentage = 5
-                lox_main.open()
+                actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 5)
+                actuator_prop_check.partial_open()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -256,8 +267,8 @@ def check_system(n_clicks):
                         break
         while True:
             try:
-                percentage = 50
-                lox_main.open()
+                actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 50)
+                actuator_prop_check.partial_open()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -274,7 +285,7 @@ def check_system(n_clicks):
         print("\nBeginning Opening of Actuator Valve\n")
         while True:
             try:
-                lox_main.close()
+                actuator_prop.close()
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -327,26 +338,27 @@ def update_saved_data(n_clicks):
     else:
         raise PreventUpdate
 
-#@app.callback(
-#    Output(component_id='pressurerelief', component_property='children'),
-#    [Input(component_id='pressure', component_property='children')])
-#def relief_pressure_check(pressure):
-#    maximum_pressure = 200
-#    if pressure >= maximum_pressure:
-#        time_relief = time.time()
-#        print('Pressure Exceeded Maximum: Opening Relief Valve')
-#        print(time_relief)
-#        while pressure >= maximum_pressure:
-#            lox_vent.open()
-#            if pressure < maximum_pressure:
-#                time_relief_end = time.time()
-#                lox_vent.close()
-#                print(time_relief_end)
-#                return 'Ouput: {}'.format('Pressure has returned to nominal value')
-#    else:
-#        raise PreventUpdate
+
+@app.callback(
+    Output(component_id='pressurerelief', component_property='children'),
+    [Input(component_id='pressure', component_property='children')])
+def relief_pressure_check(pressure):
+    maximum_pressure = 200
+    if pressure >= maximum_pressure:
+        time_relief = time.time()
+        print('Pressure Exceeded Maximum: Opening Relief Valve')
+        print(time_relief)
+        while pressure >= maximum_pressure:
+            vent_valve.open()
+            if pressure < maximum_pressure:
+                time_relief_end = time.time()
+                vent_valve.close()
+                print(time_relief_end)
+                return 'Ouput: {}'.format('Pressure has returned to nominal value')
+    else:
+        raise PreventUpdate
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='192.168.7.2')
+    app.run_server(debug=True)
     # 192.168.7.2

@@ -55,13 +55,17 @@ class Sensor:
         :return: avg: Float, the average of the sensor data, after running through the vote function.
         """
 
+        with open("pressuretestdata.csv", 'rU') as f:
+            tempdata = [list(map(int, rec)) for rec in reader(f, delimiter=',')]
+
         # Recording sensor time
         t = time.process_time()
 
-        processed_data = self.adc_reading()
-        volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
+        # processed_data = self.adc_reading()
+        # volts = np.array([tempdata[0][0], tempdata[0][1], tempdata[0][2]])
+        data_unit = np.array([tempdata[0][0], tempdata[0][1], tempdata[0][2]])
         # Converts all pressure sensor readings from volts to psi
-        data_unit = self.volt_to_unit(volts)
+        # data_unit = self.volt_to_unit(volts)
         avg = self.vote(data_unit)
 
         # Appends temporary data to sensor data array

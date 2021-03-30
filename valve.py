@@ -31,7 +31,7 @@ class Valve:
         self.partial = givenPartial
         if self.type == 'solenoid':
             GPIO.setup(self.pin0, GPIO.OUT)
-        if self.type == 'actuator':
+        if self.type == 'Prop':
             GPIO.setup(self.pin0, GPIO.OUT)
             GPIO.setup(self.pin1, GPIO.OUT)
 

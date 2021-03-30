@@ -1,13 +1,16 @@
 import csv
 import time
 from sensors_test import Sensor
-from valve import Valve
+from valve_test import Valve
 from itertools import zip_longest
-import sys
-import os
-import fcntl
+from csv import reader
+import numpy as np
 
 time_duration = 86400
+
+# with open("pressuretestdata.csv", 'rU') as f:
+#    tempdata = [list(map(int, rec)) for rec in reader(f, delimiter=',')]
+#    i = 0
 
 # Data Frames for Saving
 pressure_list = ["Pressure"]
@@ -18,10 +21,10 @@ temperature_empty_list = ["Temperature Empty"]
 temperature_empty_time_list = ["time"]
 
 # Valve Definition and Classes
-lox_main = Valve('LOX Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
-lox_vent = Valve('LOX Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-met_vent = Valve('Methane Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-p_valve = Valve('Pressurant Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
@@ -50,53 +53,79 @@ while not pressure_cold_flow.verify_connection() and temperature_fill_line.verif
         and temperature_empty_line.verify_connection():
     input("\nPress Enter to Start Verification Again:")
 print("\nAll Sensors are Functional\n")
-while not lox_main.verify_connection_valve and lox_vent.verify_connection_valve and \
-        met_vent.verify_connection_valve and p_valve.verify_connection_valve:
+while not actuator_prop.verify_connection_valve and actuator_solenoid.verify_connection_valve and \
+        fill_valve.verify_connection_valve and vent_valve.verify_connection_valve:
     input("\nPress Enter to Start Verification Again:")
 print("\nAll Valves are Functional\n")
 print("\nVerification Complete, Press Enter to Continue:\n")
 
 print()
 print('Closing All Valves')
-lox_main.close()
-lox_vent.close()
-met_vent.close()
-p_valve.close()
+actuator_prop.close()
+actuator_solenoid.close()
+fill_valve.close()
+vent_valve.close()
+
+actuator_prop.get_state()
+actuator_solenoid.get_state()
+fill_valve.get_state()
+vent_valve.get_state()
 
 input('Press Enter to Open filling valve')
 print('Opening Fill Valve: Begin Filling Procedure')
 print('Press Enter to begin filling and Enter again to end filling')
-lox_main.open()
+fill_valve.open()
+fill_valve.get_state()
 
 maximum_pressure = 200
 nominal_pressure = 100
 
-fl = fcntl.fcntl(sys.stdin.fileno(), fcntl.F_GETFL)
-fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, fl | os.O_NONBLOCK)
+user_input = float(input('Enter 1 to Complete Filling Procedure:'))
+time.sleep(3)
+
 while True:
     pressure = pressure_cold_flow.read_sensor()
+    # pressure = np.array([tempdata[i][0], tempdata[i][1], tempdata[i][2]])
+    # i = i + 1
     print(pressure)
-    if pressure >= maximum_pressure:
+    if pressure[0] >= maximum_pressure:
         time_relief = time.time()
         print('Pressure Exceeded Maximum: Opening Relief Valve')
         print(time_relief)
-        while pressure >= maximum_pressure:
-            lox_vent.open()
-            if pressure < maximum_pressure:
+        flag = 0
+        while pressure[0] >= maximum_pressure:
+            pressure = pressure_cold_flow.read_sensor()
+            # pressure = np.array([tempdata[i][0], tempdata[i][1], tempdata[i][2]])
+            # i = i + 1
+            print(pressure)
+            if flag == 0:
+                fill_valve.close()
+                fill_valve.get_state()
+                vent_valve.open()
+                vent_valve.get_state()
+                flag = 1
+            if pressure[0] <= nominal_pressure:
                 time_relief_end = time.time()
-                lox_vent.close()
+                fill_valve.open()
+                fill_valve.get_state()
+                vent_valve.close()
+                vent_valve.get_state()
                 print(time_relief_end)
-    try:
-        stdin = sys.stdin.read()
-        if "\n" in stdin or "\r" in stdin:
-            break
-    except IOError:
-        pass
-    time.sleep(1)
+    if 150 > pressure[0] >= 120:
+        break
+fill_valve.close()
+fill_valve.get_state()
+final_pressure = pressure
+# final_pressure = pressure_cold_flow.read_sensor()
+
+print("Filling Completed: Current Pressure is...")
+print(final_pressure[0])
+input("Press Enter to Begin Leak Test")
 
 time_start = time.time()
+n = 0
 
-while time.time() < time_start + time_duration:
+while time.time() - time_start < time_duration:
     pressure_list = []
     pressure_time_list = []
     temperature_fill_list = []
@@ -110,11 +139,11 @@ while time.time() < time_start + time_duration:
         temp_empty, time_empty = temperature_empty_line.read_sensor()
 
         pressure_list.append(pressure)
-        pressure_time_list.append(time_pres)
+        pressure_time_list.append(time_pres + 600*n)
         temperature_fill_list.append(temp_fill)
-        temperature_fill_time_list.append(time_fill)
+        temperature_fill_time_list.append(time_fill + 60*n)
         temperature_empty_list.append(temp_empty)
-        temperature_empty_time_list.append(time_empty)
+        temperature_empty_time_list.append(time_empty + 60*n)
 
         saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
                                temperature_empty_list, temperature_empty_time_list]
@@ -124,5 +153,17 @@ while time.time() < time_start + time_duration:
         wr = csv.writer(myfile)
         wr.writerows(export_data)
     myfile.close()
+    n = n + 1
     time.sleep(600)
 print('done')
+print(time.time() - time_start)
+input('Press Enter to Open Valves and Depressurize Tank')
+actuator_prop.open()
+actuator_solenoid.open()
+fill_valve.open()
+vent_valve.open()
+
+actuator_prop.get_state()
+actuator_solenoid.get_state()
+fill_valve.get_state()
+vent_valve.get_state()
