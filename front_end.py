@@ -57,21 +57,47 @@ app.layout = html.Div([
                 hidden=True, contextMenu='Help',
                 style=dict(backgroundColor='Black')),
     html.Div([
-        html.H3('Cold Flow Pressure Test'),
-        html.Button('Start', id='startbutton', n_clicks=0),
-        html.Button('Stop', id= 'stopbutton', n_clicks=0),
-        html.Button('Save', id='savebutton', n_clicks=0),
-        html.Button('Check System', id='checkbutton', n_clicks=0),
-        html.Button('Cold Flow', id='coldflowbutton', n_clicks=0),
-        html.Div('idle', id='checkoutput'),
-        html.Div('idle', id='coldflowoutput'),
-        html.Div('idle', id='pressurerelief'),
-        html.Div(id='save_data')], className='pretty_container four columns'),
+        html.H1('ARES: Team Daedalus'),
+        html.Div([
+            html.Button('Start', id='startbutton', n_clicks=0),
+            html.Button('Stop', id='stopbutton', n_clicks=0),
+            html.Button('Save', id='savebutton', n_clicks=0),
+            html.Button('Clean Up', id='finishexperiment', n_clicks=0),
+        ], className="pretty_container"),
+        html.Div(id='save_data'),
+        html.Div([
+            html.H3('Test Buttons'),
+            html.Button('Check System', id='generalcheckbutton', n_clicks=0),
+            html.Button('Hardware/Software Check', id='checkbutton', n_clicks=0),
+            html.Button('Cold Flow', id='coldflowbutton', n_clicks=0),
+        ], className="pretty_container"),
+        html.Div([
+            html.H3('Valve State'),
+            html.Div('idle', id='actuatorpropstate'),
+            html.Div('idle', id='actuatorsolstate'),
+            html.Div('idle', id='fillstate'),
+            html.Div('idle', id='ventstate'),
+        ], className="pretty_container"),
+        html.Div([
+            html.H3('System State'),
+            html.Div('Hardware/Software Update', id='checkoutput'),
+            html.Div('Cold Flow Update', id='coldflowoutput'),
+            html.Div('Relief Valve Update', id='pressurerelief'),
+        ], className="pretty_container"),
+        html.Div([
+            html.H3('Preliminary Check'),
+            html.Div('idle', id='valvecheck'),
+            html.Div('idle', id='pressurecheck'),
+            html.Div('idle', id='temperaturecheck'),
+        ], className="pretty_container"),
+        html.Div('idle', id='placeholder', style={'display': 'none'}),
+        html.Div('idle', id='placeholder2', style={'display': 'none'})
+        ], className='pretty_container four columns'),
     html.Div([
         html.Div([
-            html.Div('idle', id='pressoutput'),
-            html.Div('idle', id='filloutput'),
-            html.Div('idle', id='emptyoutput'),
+            html.H3('idle', id='pressoutput'),
+            html.H3('idle', id='filloutput'),
+            html.H3('idle', id='emptyoutput'),
         ], className="pretty_container"),
         html.Div(dcc.Graph(id='pres_graph', figure=pressure_fig, animate=True),
                  className="pretty_container"),
@@ -119,6 +145,24 @@ def read(n_intervals, n_clicks, m_clicks):
     else:
         raise PreventUpdate
 
+
+@app.callback(
+    [Output('placeholder', 'children')],
+    [Input('startbutton', 'n_clicks')]
+)
+def close_valves(n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'startbutton' in changed_id:
+        actuator_prop.close()
+        actuator_solenoid.close()
+        fill_valve.close()
+        vent_valve.close()
+        call = ['True']
+        return call
+    else:
+        raise PreventUpdate
+
+
 @app.callback(
     [Output(component_id='pres_graph', component_property='extendData'),
      Output(component_id='fill_graph', component_property='extendData'),
@@ -157,6 +201,25 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
     else:
         raise PreventUpdate
 
+@app.callback(
+    [Output('actuatorpropstate', 'children'),
+     Output('actuatorsolstate', 'children'),
+     Output('fillstate', 'children'),
+     Output('ventstate', 'children')],
+    [Input('startbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')])
+def valve_state(n_clicks, m_clicks):
+    if n_clicks > 0 and m_clicks == 0:
+
+        act_prop_state = actuator_prop.get_state()
+        act_sol_state = actuator_solenoid.get_state()
+        fill_state = fill_valve.get_state()
+        vent_state = vent_valve.get_state()
+
+        return act_prop_state, act_sol_state, fill_state, vent_state
+    else:
+        raise PreventUpdate
+
 
 @app.callback(
     Output('checkoutput', 'children'),
@@ -165,6 +228,7 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
 def check_system(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'checkbutton' in changed_id:
+        check_flag = False
         print(
             "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
         print("------------------------------------------")
@@ -198,7 +262,7 @@ def check_system(n_clicks):
         print("\nVerification Complete, Press Enter to Continue:\n")
 
         print("\nBeginning Opening of Solenoid Valves\n")
-        while True:
+        while not check_flag:
             try:
                 vent_valve.open()
                 actuator_solenoid.open()
@@ -213,11 +277,12 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHave all Solenoids opened? (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
-
+        check_flag = False
         print("\nBeginning Closing of Solenoid Valves\n")
-        while True:
+        while not check_flag:
             try:
                 vent_valve.close()
                 actuator_solenoid.close()
@@ -232,11 +297,12 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHave all Solenoids Closed? (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
-
+        check_flag = False
         print("\nBeginning Opening of Actuator Valve\n")
-        while True:
+        while not check_flag:
             try:
                 actuator_prop.open()
             except Exception:
@@ -249,8 +315,10 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHas the Actuator Opened (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
-        while True:
+        check_flag = False
+        while not check_flag:
             try:
                 actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 5)
                 actuator_prop_check.partial_open()
@@ -264,8 +332,10 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHas the Actuator Opened 5% (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
-        while True:
+        check_flag = False
+        while not check_flag:
             try:
                 actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 50)
                 actuator_prop_check.partial_open()
@@ -279,11 +349,12 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHas the Actuator Opened Selected percentage(yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
         print("\nVerification Complete, Press Enter to Continue:\n")
-
-        print("\nBeginning Opening of Actuator Valve\n")
-        while True:
+        check_flag = False
+        print("\nBeginning Closing of Actuator Valve\n")
+        while not check_flag:
             try:
                 actuator_prop.close()
             except Exception:
@@ -296,6 +367,7 @@ def check_system(n_clicks):
                     verification = input(
                         '\nHas the Actuator Closed (yes/no)?\n')
                     if verification == 'yes' or 'Yes':
+                        check_flag = True
                         break
         return 'System Check Successful'
     else:
@@ -313,13 +385,6 @@ def cold_flow_initiate(n_clicks):
     else:
         raise PreventUpdate
 
-
-# @app.callback(
-#     Output(component_id='my-daq-gauge', component_property='value'),
-#     [Input(component_id='interval-component', component_property='n_intervals')])
-# def update_pressure_data(n_clicks):
-#     vals = pressure_test.read_pressure()
-#     return vals
 
 @app.callback(
     Output(component_id='save_data', component_property='children'),
@@ -341,20 +406,66 @@ def update_saved_data(n_clicks):
 
 @app.callback(
     Output(component_id='pressurerelief', component_property='children'),
-    [Input(component_id='pressure', component_property='children')])
-def relief_pressure_check(pressure):
-    maximum_pressure = 200
-    if pressure >= maximum_pressure:
-        time_relief = time.time()
-        print('Pressure Exceeded Maximum: Opening Relief Valve')
-        print(time_relief)
-        while pressure >= maximum_pressure:
-            vent_valve.open()
-            if pressure < maximum_pressure:
-                time_relief_end = time.time()
-                vent_valve.close()
-                print(time_relief_end)
-                return 'Ouput: {}'.format('Pressure has returned to nominal value')
+    [Input(component_id='pressure', component_property='children'),
+     Input('startbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')
+     ])
+def relief_pressure_check(pressure, n_clicks, m_clicks):
+    if n_clicks > 0 and m_clicks == 0:
+        maximum_pressure = 1000
+        if pressure >= maximum_pressure:
+            time_relief = time.time()
+            print('Pressure Exceeded Maximum: Opening Relief Valve')
+            print(time_relief)
+            while pressure >= maximum_pressure:
+                vent_valve.open()
+                if pressure < maximum_pressure:
+                    time_relief_end = time.time()
+                    vent_valve.close()
+                    print(time_relief_end)
+                    return 'Ouput: {}'.format('Pressure has returned to nominal value')
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+        [Output('valvecheck', 'children'),
+         Output('pressurecheck', 'children'),
+         Output('temperaturecheck', 'children')],
+        [Input('generalcheckbutton', 'n_clicks')]
+)
+def check_system(n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'checkbutton' in changed_id:
+        if not pressure_cold_flow.verify_connection():
+            pressure_check = 'Pressure Check Failed'
+        else:
+            pressure_check = 'Pressure Check Succeeded'
+
+        if not temperature_fill_line.verify_connection() and temperature_empty_line.verify_connection():
+            temperature_check = 'Temperature Check Failed'
+        else:
+            temperature_check = 'Temperature Check Succeeded'
+
+        if not actuator_prop.verify_connection_valve and actuator_solenoid.verify_connection_valve and \
+                fill_valve.verify_connection_valve and vent_valve.verify_connection_valve:
+            valve_check = 'Valve Check Failed'
+        else:
+            valve_check = 'Valve Check Succeeded'
+        return valve_check, pressure_check, temperature_check
+    else:
+        raise PreventUpdate
+
+
+def cleanup_procedure(n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'finishexperiment' in changed_id:
+        actuator_prop.open()
+        actuator_solenoid.open()
+        fill_valve.open()
+        vent_valve.open()
+        call = ['True']
+        return call
     else:
         raise PreventUpdate
 
