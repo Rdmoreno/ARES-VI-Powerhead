@@ -1,6 +1,5 @@
 # Valve Module
 import Adafruit_BBIO.GPIO as GPIO
-from smbus2 import SMBus, i2c_msg
 import pandas as pd
 import time
 import Adafruit_MCP4725

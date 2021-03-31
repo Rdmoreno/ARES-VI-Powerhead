@@ -1,8 +1,6 @@
 # Ryan Moreno new Sensor Module (work in progress)
 # ARES VI (2020-2021)
-import csv
 import time
-from csv import reader
 import pandas as pd
 import numpy as np
 import Adafruit_BBIO.GPIO as GPIO
@@ -67,10 +65,9 @@ class Sensor:
 
         processed_data = self.adc_reading()
         volts = np.array([processed_data[0], processed_data[1], processed_data[2]])
-        data_unit = volts
         # print(np.sum(volts)/len(volts))
         # Converts all pressure sensor readings from volts to psi
-        # data_unit = self.volt_to_unit(volts)
+        data_unit = self.volt_to_unit(volts)
         avg = self.vote(data_unit)
 
         # Appends temporary data to sensor data array
@@ -111,7 +108,7 @@ class Sensor:
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
             reference_voltage = 4870
-            data_conversion = (int(raw_data[4:], 2) / 4095 * reference_voltage)
+            data_conversion = int((int(raw_data[4:], 2) / 4095 * reference_voltage))
             processed_data[x] = data_conversion
 
             spi.close()

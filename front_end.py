@@ -2,7 +2,7 @@ import time
 import pandas as pd
 import csv
 from itertools import zip_longest
-from sensors_test import Sensor
+from sensors import Sensor
 from valve_test import Valve
 import dash
 import dash_core_components as dcc
@@ -20,6 +20,7 @@ temperature_fill_list = ["Temperature Fill"]
 temperature_fill_time_list = ["time"]
 temperature_empty_list = ["Temperature Empty"]
 temperature_empty_time_list = ["time"]
+official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
 actuator_prop = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 100)
@@ -122,6 +123,7 @@ app.layout = html.Div([
     html.Div(id='time_fill', style={'display': 'none'}),
     html.Div(id='temp_empty', style={'display': 'none'}),
     html.Div(id='time_empty', style={'display': 'none'}),
+    html.Div(id='time_official', style={'display': 'none'}),
 ], className='row flex-display')
 
 
@@ -131,7 +133,8 @@ app.layout = html.Div([
      Output('temp_fill', 'children'),
      Output('time_fill', 'children'),
      Output('temp_empty', 'children'),
-     Output('time_empty', 'children')],
+     Output('time_empty', 'children'),
+     Output('time_official', 'children')],
     [Input('interval-component', 'n_intervals'),
      Input('startbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')]
@@ -141,7 +144,8 @@ def read(n_intervals, n_clicks, m_clicks):
         pres, time_pres = pressure_cold_flow.read_sensor()
         temp_fill, time_fill = temperature_fill_line.read_sensor()
         temp_empty, time_empty = temperature_empty_line.read_sensor()
-        return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty
+        time_official = time.process_time()
+        return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty, time_official
     else:
         raise PreventUpdate
 
@@ -176,10 +180,11 @@ def close_valves(n_clicks):
      Input(component_id='time_fill', component_property='children'),
      Input(component_id='temp_empty', component_property='children'),
      Input(component_id='time_empty', component_property='children'),
+     Input(component_id='time_official', component_property='children'),
      Input('startbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')])
 def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
-                         time_empty, n_clicks, m_clicks):
+                         time_empty, time_official, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
 
         data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
@@ -192,6 +197,7 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
         temperature_fill_time_list.append(time_fill)
         temperature_empty_list.append(temp_empty)
         temperature_empty_time_list.append(time_empty)
+        official_time_list.append(time_official)
 
         pres_update = 'Current Pressure: {}'.format(pressure)
         fill_update = 'Current Pressure: {}'.format(temp_fill)
@@ -393,7 +399,7 @@ def update_saved_data(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'savebutton' in changed_id:
         saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
-                               temperature_empty_list, temperature_empty_time_list]
+                               temperature_empty_list, temperature_empty_time_list, official_time_list]
         export_data = zip_longest(*saved_data_combined, fillvalue='')
         with open('data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
             wr = csv.writer(myfile)

@@ -3,8 +3,6 @@ import time
 from sensors_test import Sensor
 from valve_test import Valve
 from itertools import zip_longest
-from csv import reader
-import numpy as np
 import threading
 
 input_flag = 1
