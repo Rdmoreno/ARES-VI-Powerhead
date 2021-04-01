@@ -73,7 +73,7 @@ def leak_test():
 
     input('Press Enter to Open filling valve')
     print('Opening Fill Valve: Begin Filling Procedure')
-    print('Press Enter to begin filling and Enter again to end filling')
+    input('Press Enter to begin filling and Enter again to end filling')
     fill_valve.open()
     fill_valve.get_state()
 
@@ -113,6 +113,7 @@ def leak_test():
                     vent_valve.close()
                     vent_valve.get_state()
                     print(time_relief_end)
+        time.sleep(.1)
     fill_valve.close()
     fill_valve.get_state()
     final_pressure = pressure_cold_flow.read_sensor()
