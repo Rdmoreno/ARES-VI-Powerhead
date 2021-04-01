@@ -1,7 +1,7 @@
 import csv
 import time
-from sensors_test import Sensor
-from valve_test import Valve
+from sensors import Sensor
+from valve import Valve
 from itertools import zip_longest
 import threading
 
@@ -77,8 +77,8 @@ def leak_test():
     fill_valve.open()
     fill_valve.get_state()
 
-    maximum_pressure = 200000
-    nominal_pressure = 100
+    maximum_pressure = 645
+    nominal_pressure = 500
 
     print('Press Enter When Desired Pressure is Met')
     time.sleep(3)

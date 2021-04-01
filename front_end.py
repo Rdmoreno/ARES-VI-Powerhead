@@ -3,7 +3,7 @@ import pandas as pd
 import csv
 from itertools import zip_longest
 from sensors import Sensor
-from valve_test import Valve
+from valve import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -37,6 +37,12 @@ temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
                                'P9_14', 'P9_16', '000', '000', '000')
 temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
                                 'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
+
+# Valve States and Tracking Global Variables
+act_prop_state = 'Actuator Propellant Valve: NOT SET'
+act_sol_state = 'Actuator Solenoid Valve: NOT SET'
+fill_state = 'Fill Solenoid Valve: NOT SET'
+vent_state = 'Vent Solenoid Valve: NOT SET'
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
@@ -157,11 +163,16 @@ def read(n_intervals, n_clicks, m_clicks):
 def close_valves(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'startbutton' in changed_id:
+        global act_prop_state, act_sol_state, fill_state, vent_state
         actuator_prop.close()
         actuator_solenoid.close()
         fill_valve.close()
         vent_valve.close()
         call = ['True']
+        act_prop_state = 'Actuator Propellant Valve: Close'
+        act_sol_state = 'Actuator Solenoid Valve: Close'
+        fill_state = 'Fill Solenoid Valve: Close'
+        vent_state = 'Vent Solenoid Valve: Close'
         return call
     else:
         raise PreventUpdate
@@ -215,14 +226,15 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
     [Input('startbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')])
 def valve_state(n_clicks, m_clicks):
-    if n_clicks > 0 and m_clicks == 0:
+    if n_clicks > 0:
+        global act_prop_state, act_sol_state, fill_state, vent_state
 
-        act_prop_state = actuator_prop.get_state()
-        act_sol_state = actuator_solenoid.get_state()
-        fill_state = fill_valve.get_state()
-        vent_state = vent_valve.get_state()
+        act_prop_update = act_prop_state
+        act_sol_update = act_sol_state
+        fill_valve_update = fill_state
+        vent_valve_update = vent_state
 
-        return act_prop_state, act_sol_state, fill_state, vent_state
+        return act_prop_update, act_sol_update, fill_valve_update, vent_valve_update
     else:
         raise PreventUpdate
 
@@ -234,6 +246,7 @@ def valve_state(n_clicks, m_clicks):
 def check_system(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'checkbutton' in changed_id:
+        global act_prop_state, act_sol_state, fill_state, vent_state
         check_flag = False
         print(
             "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
@@ -273,6 +286,9 @@ def check_system(n_clicks):
                 vent_valve.open()
                 actuator_solenoid.open()
                 fill_valve.open()
+                act_sol_state = 'Actuator Solenoid Valve: Open'
+                fill_state = 'Fill Solenoid Valve: Open'
+                vent_state = 'Vent Solenoid Valve: Open'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -293,6 +309,9 @@ def check_system(n_clicks):
                 vent_valve.close()
                 actuator_solenoid.close()
                 fill_valve.close()
+                act_sol_state = 'Actuator Solenoid Valve: Close'
+                fill_state = 'Fill Solenoid Valve: Close'
+                vent_state = 'Vent Solenoid Valve: Close'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -311,6 +330,7 @@ def check_system(n_clicks):
         while not check_flag:
             try:
                 actuator_prop.open()
+                act_prop_state = 'Actuator Propellant Valve: Open'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -328,6 +348,7 @@ def check_system(n_clicks):
             try:
                 actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 5)
                 actuator_prop_check.partial_open()
+                act_prop_state = 'Actuator Propellant Valve: Opened 5%'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -345,6 +366,7 @@ def check_system(n_clicks):
             try:
                 actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 50)
                 actuator_prop_check.partial_open()
+                act_prop_state = 'Actuator Propellant Valve: Opened 50%'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -363,6 +385,7 @@ def check_system(n_clicks):
         while not check_flag:
             try:
                 actuator_prop.close()
+                act_prop_state = 'Actuator Propellant Valve: Closed'
             except Exception:
                 print(
                     "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
@@ -418,18 +441,30 @@ def update_saved_data(n_clicks):
      ])
 def relief_pressure_check(pressure, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
-        maximum_pressure = 1000
+        global act_prop_state, act_sol_state, fill_state, vent_state
+        maximum_pressure = 645
+        nominal_pressure = 500
         if pressure >= maximum_pressure:
-            time_relief = time.time()
+            time_relief = time.process_time()
+            vent_valve.open()
+            fill_valve.close()
+            fill_state = 'Fill Solenoid Valve: Close'
+            vent_state = 'Vent Solenoid Valve: Open'
             print('Pressure Exceeded Maximum: Opening Relief Valve')
             print(time_relief)
-            while pressure >= maximum_pressure:
-                vent_valve.open()
-                if pressure < maximum_pressure:
-                    time_relief_end = time.time()
+            while True:
+                pres_relief = pressure_cold_flow.read_sensor()
+                if pres_relief[0] < nominal_pressure:
+                    time_relief_end = time.process_time()
                     vent_valve.close()
+                    fill_valve.open()
+                    fill_state = 'Fill Solenoid Valve: Open'
+                    vent_state = 'Vent Solenoid Valve: Close'
                     print(time_relief_end)
-                    return 'Ouput: {}'.format('Pressure has returned to nominal value')
+                    break
+            return 'Ouput: {}'.format('Pressure has returned to nominal value')
+        else:
+            raise PreventUpdate
     else:
         raise PreventUpdate
 
@@ -463,13 +498,22 @@ def check_system(n_clicks):
         raise PreventUpdate
 
 
+@app.callback(
+        [Output('placeholder2', 'children')],
+        [Input('finishexperiment', 'n_clicks')]
+)
 def cleanup_procedure(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'finishexperiment' in changed_id:
+        global act_prop_state, act_sol_state, fill_state, vent_state
         actuator_prop.open()
         actuator_solenoid.open()
         fill_valve.open()
         vent_valve.open()
+        act_prop_state = 'Actuator Propellant Valve: Open'
+        act_sol_state = 'Actuator Solenoid Valve: Open'
+        fill_state = 'Fill Solenoid Valve: Open'
+        vent_state = 'Vent Solenoid Valve: Open'
         call = ['True']
         return call
     else:
