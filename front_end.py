@@ -43,6 +43,8 @@ act_prop_state = 'Actuator Propellant Valve: NOT SET'
 act_sol_state = 'Actuator Solenoid Valve: NOT SET'
 fill_state = 'Fill Solenoid Valve: NOT SET'
 vent_state = 'Vent Solenoid Valve: NOT SET'
+filling_trigger = False
+program_start_flag = True
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
@@ -135,6 +137,47 @@ app.layout = html.Div([
 
 
 @app.callback(
+    [Output('placeholder', 'children')],
+    [Input('startbutton', 'n_clicks')]
+)
+def program_start(n_clicks):
+    global program_start_flag
+    if program_start_flag:
+        global act_prop_state, act_sol_state, fill_state, vent_state
+        actuator_prop.close()
+        actuator_solenoid.close()
+        fill_valve.close()
+        vent_valve.close()
+        call = ['True']
+        act_prop_state = 'Actuator Propellant Valve: Close'
+        act_sol_state = 'Actuator Solenoid Valve: Close'
+        fill_state = 'Fill Solenoid Valve: Close'
+        vent_state = 'Vent Solenoid Valve: Close'
+        program_start_flag = False
+        return call
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    [Output('placeholder', 'children')],
+    [Input('startbutton', 'n_clicks')]
+)
+def open_valve_cold_flow_start(n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'startbutton' in changed_id:
+        global act_prop_state, act_sol_state
+        actuator_prop.open()
+        actuator_solenoid.open()
+        act_prop_state = 'Actuator Propellant Valve: Open'
+        act_sol_state = 'Actuator Solenoid Valve: Open'
+        call = ['True']
+        return call
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
     [Output('pressure', 'children'),
      Output('time_pres', 'children'),
      Output('temp_fill', 'children'),
@@ -153,28 +196,6 @@ def read(n_intervals, n_clicks, m_clicks):
         temp_empty, time_empty = temperature_empty_line.read_sensor()
         time_official = time.process_time()
         return pres, time_pres, temp_fill, time_fill, temp_empty, time_empty, time_official
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
-    [Output('placeholder', 'children')],
-    [Input('startbutton', 'n_clicks')]
-)
-def close_valves(n_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'startbutton' in changed_id:
-        global act_prop_state, act_sol_state, fill_state, vent_state
-        actuator_prop.close()
-        actuator_solenoid.close()
-        fill_valve.close()
-        vent_valve.close()
-        call = ['True']
-        act_prop_state = 'Actuator Propellant Valve: Close'
-        act_sol_state = 'Actuator Solenoid Valve: Close'
-        fill_state = 'Fill Solenoid Valve: Close'
-        vent_state = 'Vent Solenoid Valve: Close'
-        return call
     else:
         raise PreventUpdate
 
@@ -218,6 +239,43 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
         return data_pres, data_fill, data_empty, pres_update, fill_update, empty_update
     else:
         raise PreventUpdate
+
+
+@app.callback(
+    Output(component_id='pressurerelief', component_property='children'),
+    [Input(component_id='pressure', component_property='children'),
+     Input('startbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')
+     ])
+def relief_pressure_check(pressure, n_clicks, m_clicks):
+    if n_clicks > 0 and m_clicks == 0:
+        global act_prop_state, act_sol_state, fill_state, vent_state
+        maximum_pressure = 645
+        nominal_pressure = 500
+        if pressure >= maximum_pressure:
+            time_relief = time.process_time()
+            vent_valve.open()
+            fill_valve.close()
+            fill_state = 'Fill Solenoid Valve: Close'
+            vent_state = 'Vent Solenoid Valve: Open'
+            print('Pressure Exceeded Maximum: Opening Relief Valve')
+            print(time_relief)
+            while True:
+                pres_relief = pressure_cold_flow.read_sensor()
+                if pres_relief[0] < nominal_pressure:
+                    time_relief_end = time.process_time()
+                    vent_valve.close()
+                    fill_valve.open()
+                    fill_state = 'Fill Solenoid Valve: Open'
+                    vent_state = 'Vent Solenoid Valve: Close'
+                    print(time_relief_end)
+                    break
+            return 'Ouput: {}'.format('Pressure has returned to nominal value')
+        else:
+            raise PreventUpdate
+    else:
+        raise PreventUpdate
+
 
 @app.callback(
     [Output('actuatorpropstate', 'children'),
@@ -406,12 +464,25 @@ def check_system(n_clicks):
 
 @app.callback(
     [Output('coldflowoutput', 'children')],
+    [Input('coldflowfillbutton', 'n_clicks')])
+def filling_stop(n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'coldflowfillbutton' in changed_id:
+        global filling_trigger
+        filling_trigger = True
+        return 'Filling Procedure Stopped'
+    else:
+        raise PreventUpdate
+
+@app.callback(
+    [Output('coldflowoutput', 'children')],
     [Input('coldflowbutton', 'n_clicks'),
      Input('coldflowfillbutton', 'n_clicks')])
 def cold_flow_fill(n_clicks, m_clicks):
     global act_prop_state, act_sol_state, fill_state, vent_state
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'coldflowbutton' in changed_id:
+        global filling_trigger
         print('Welcome to the Team Daedalus Cold Flow Test')
         input('Please Press Enter to Confirm Start')
         print('Starting System Check')
@@ -451,7 +522,7 @@ def cold_flow_fill(n_clicks, m_clicks):
         print('Press the Cold FLow Filling Button When Desired Pressure is Met')
         time.sleep(10)
 
-        while True:
+        while not filling_trigger:
             pressure = pressure_cold_flow.read_sensor()
             temp_empty = temperature_empty_line.read_sensor()
             temp_fill = temperature_fill_line.read_sensor()
@@ -478,8 +549,7 @@ def cold_flow_fill(n_clicks, m_clicks):
                         vent_state = 'Vent Solenoid Valve: Closed'
                         print(time_relief_end)
             time.sleep(.3)
-            if 'coldflowfillbutton' in changed_id:
-                break
+        filling_trigger = False
         fill_valve.close()
         fill_state = 'Fill Solenoid Valve: Closed'
         final_pressure = pressure_cold_flow.read_sensor()
@@ -494,7 +564,7 @@ def cold_flow_fill(n_clicks, m_clicks):
         print('Press the Cold FLow Filling Button When Desired Pressure is Met')
         time.sleep(10)
 
-        while 'coldflowfillbutton' not in changed_id:
+        while not filling_trigger:
             pressure = pressure_cold_flow.read_sensor()
             temp_empty = temperature_empty_line.read_sensor()
             temp_fill = temperature_fill_line.read_sensor()
@@ -547,42 +617,6 @@ def update_saved_data(n_clicks):
             wr.writerows(export_data)
         myfile.close()
         return 'Ouput: {}'.format('Saved')
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
-    Output(component_id='pressurerelief', component_property='children'),
-    [Input(component_id='pressure', component_property='children'),
-     Input('startbutton', 'n_clicks'),
-     Input('stopbutton', 'n_clicks')
-     ])
-def relief_pressure_check(pressure, n_clicks, m_clicks):
-    if n_clicks > 0 and m_clicks == 0:
-        global act_prop_state, act_sol_state, fill_state, vent_state
-        maximum_pressure = 645
-        nominal_pressure = 500
-        if pressure >= maximum_pressure:
-            time_relief = time.process_time()
-            vent_valve.open()
-            fill_valve.close()
-            fill_state = 'Fill Solenoid Valve: Close'
-            vent_state = 'Vent Solenoid Valve: Open'
-            print('Pressure Exceeded Maximum: Opening Relief Valve')
-            print(time_relief)
-            while True:
-                pres_relief = pressure_cold_flow.read_sensor()
-                if pres_relief[0] < nominal_pressure:
-                    time_relief_end = time.process_time()
-                    vent_valve.close()
-                    fill_valve.open()
-                    fill_state = 'Fill Solenoid Valve: Open'
-                    vent_state = 'Vent Solenoid Valve: Close'
-                    print(time_relief_end)
-                    break
-            return 'Ouput: {}'.format('Pressure has returned to nominal value')
-        else:
-            raise PreventUpdate
     else:
         raise PreventUpdate
 
