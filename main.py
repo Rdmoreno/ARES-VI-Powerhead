@@ -7,8 +7,6 @@ from valve import Valve
 from Adafruit_I2C import Adafruit_I2C
 import numpy as np
 
-Iter = 1
-
 # config-pin p9_17 spi_cs
 # config-pin p9_18 spi
 # config-pin p9_21 spi
@@ -21,17 +19,35 @@ Iter = 1
 GPIO.setup('P8_46', GPIO.OUT)
 GPIO.output('P8_46', GPIO.HIGH)
 
-channel = ['000', '001', '010', '011', '100', '101', '110', '111']
-pin_stuff = ['P9_16', 'P9_14', 'P9_12']
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'solenoid', 4, 100)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 
-avg = np.arange(10)
+input('Press Enter to Open')
+actuator_prop.open()
+input('Press Enter to Close')
+actuator_prop.close()
+input('Press Enter to Open')
+actuator_solenoid.open()
+input('Press Enter to Close')
+actuator_solenoid.close()
+input('Press Enter to Open')
+fill_valve.open()
+input('Press Enter to Close')
+fill_valve.close()
+input('Press Enter to Open')
+vent_valve.open()
+input('Press Enter to Close')
+vent_valve.close()
+input('Press Enter to End')
 
-for x in range(10):
-    pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')
-    stuff = pressure_test.read_sensor()
-    temp = stuff[0]
-    avg[x] = temp
-print(np.sum(avg) / len(avg))
+#for x in range(10):
+#    pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')
+#    stuff = pressure_test.read_sensor()
+#    temp = stuff[0]
+#    avg[x] = temp
+#print(np.sum(avg) / len(avg))
 
 
 # for y in range(3):

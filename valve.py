@@ -30,9 +30,8 @@ class Valve:
         self.partial = givenPartial
         if self.type == 'solenoid':
             GPIO.setup(self.pin0, GPIO.OUT)
-        if self.type == 'Prop':
+        if self.type == 'prop':
             GPIO.setup(self.pin0, GPIO.OUT)
-            GPIO.setup(self.pin1, GPIO.OUT)
 
     def close(self):
         """
@@ -44,7 +43,7 @@ class Valve:
         """
 
         t = time.process_time()
-        if self.type == 'Solenoid':
+        if self.type == 'solenoid':
             GPIO.output(self.pin0, GPIO.LOW)
         else:
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
@@ -64,7 +63,7 @@ class Valve:
         """
 
         t = time.process_time()
-        if self.type != 'Solenoid':
+        if self.type != 'solenoid':
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
             percentage_calc = 4095 * (.60377358 * (self.partial / 100) + .1509434)
             rounded_percentage = round(percentage_calc)
@@ -82,7 +81,7 @@ class Valve:
         """
 
         t = time.process_time()
-        if self.type == 'Solenoid':
+        if self.type == 'solenoid':
             GPIO.output(self.pin0, GPIO.HIGH)
         else:
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
@@ -111,7 +110,7 @@ class Valve:
         """
         while True:
             try:
-                if self.type == 'Solenoid':
+                if self.type == 'solenoid':
                     GPIO.output(self.pin0, GPIO.HIGH)
                     time.sleep(2)
                     GPIO.output(self.pin0, GPIO.LOW)

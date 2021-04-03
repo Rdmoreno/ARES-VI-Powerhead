@@ -1,17 +1,13 @@
 import time
-import pandas as pd
 import csv
 from itertools import zip_longest
-from sensors_test import Sensor
-from valve_test import Valve
+from sensors import Sensor
+from valve import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-import dash_daq as daq
 from dash.exceptions import PreventUpdate
-import plotly.express as px
-import plotly.graph_objects as go
 
 # Data Frames for Saving
 pressure_list = ["Pressure"]
@@ -23,20 +19,20 @@ temperature_empty_time_list = ["time"]
 official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 100)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'Solenoid', 0, 0)
 fill_valve = Valve('Fill Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_16', 0, 'Solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
-pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
-                            'P9_16', '000', '000', '000')
+pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
+                            'P9_16', '000', '001', '010')
 
 # Temperature Sensor Definition and Classes
 temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
-                               'P9_14', 'P9_16', '000', '000', '000')
+                               'P9_12', 'P9_12', '000', '000', '000')
 temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
-                                'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
+                                'P9_14', 'P9_14', 'P9_16', '000', '000', '000')
 
 # Valve States and Tracking Global Variables
 act_prop_state = 'Actuator Propellant Valve: NOT SET'
@@ -93,6 +89,7 @@ app.layout = html.Div([
             html.Div('Hardware/Software Update', id='checkoutput'),
             html.Div('Cold Flow Update', id='coldflowoutput'),
             html.Div('Relief Valve Update', id='pressurerelief'),
+            html.Div('Relief Valve Update', id='fillcheck'),
         ], className="pretty_container"),
         html.Div([
             html.H3('Preliminary Check'),
@@ -100,7 +97,8 @@ app.layout = html.Div([
             html.Div('idle', id='pressurecheck'),
             html.Div('idle', id='temperaturecheck'),
         ], className="pretty_container"),
-        html.Div('idle', id='placeholder', style={'display': 'none'}),
+        html.Div('idle', id='placeholder0', style={'display': 'none'}),
+        html.Div('idle', id='placeholder1', style={'display': 'none'}),
         html.Div('idle', id='placeholder2', style={'display': 'none'})
         ], className='pretty_container four columns'),
     html.Div([
@@ -122,7 +120,7 @@ app.layout = html.Div([
 
     # SET INTERVAL = 0 FOR ACTUAL TEST interval=0.1 * 1000
     dcc.Interval(id='interval-component',
-                 interval=0.1*1000,
+                 interval=0,
                  n_intervals=0),
 
     # Hidden DIV
@@ -136,31 +134,31 @@ app.layout = html.Div([
 ], className='row flex-display')
 
 
-@app.callback(
-    [Output('placeholder', 'children')],
-    [Input('startbutton', 'n_clicks')]
-)
-def program_start(n_clicks):
-    global program_start_flag
-    if program_start_flag:
-        global act_prop_state, act_sol_state, fill_state, vent_state
-        actuator_prop.close()
-        actuator_solenoid.close()
-        fill_valve.close()
-        vent_valve.close()
-        call = ['True']
-        act_prop_state = 'Actuator Propellant Valve: Close'
-        act_sol_state = 'Actuator Solenoid Valve: Close'
-        fill_state = 'Fill Solenoid Valve: Close'
-        vent_state = 'Vent Solenoid Valve: Close'
-        program_start_flag = False
-        return call
-    else:
-        raise PreventUpdate
+#@app.callback(
+#    [Output('placeholder0', 'children')],
+#    [Input('startbutton', 'n_clicks')]
+#)
+#def program_start(n_clicks):
+#    global program_start_flag
+#    if program_start_flag:
+#        global act_prop_state, act_sol_state, fill_state, vent_state
+#        actuator_prop.close()
+#        actuator_solenoid.close()
+#        fill_valve.close()
+#        vent_valve.close()
+#        call = ['True']
+#        act_prop_state = 'Actuator Propellant Valve: Close'
+#        act_sol_state = 'Actuator Solenoid Valve: Close'
+#        fill_state = 'Fill Solenoid Valve: Close'
+#        vent_state = 'Vent Solenoid Valve: Close'
+#        program_start_flag = False
+#        return call
+#    else:
+#        raise PreventUpdate
 
 
 @app.callback(
-    [Output('placeholder', 'children')],
+    [Output('placeholder1', 'children')],
     [Input('startbutton', 'n_clicks')]
 )
 def open_valve_cold_flow_start(n_clicks):
@@ -302,7 +300,7 @@ def valve_state(n_clicks, m_clicks):
     Output('checkoutput', 'children'),
     [Input('checkbutton', 'n_clicks')]
 )
-def check_system(n_clicks):
+def hardware_software_test(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'checkbutton' in changed_id:
         global act_prop_state, act_sol_state, fill_state, vent_state
@@ -463,7 +461,7 @@ def check_system(n_clicks):
 
 
 @app.callback(
-    [Output('coldflowoutput', 'children')],
+    [Output('fillcheck', 'children')],
     [Input('coldflowfillbutton', 'n_clicks')])
 def filling_stop(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -673,5 +671,5 @@ def cleanup_procedure(n_clicks):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='192.168.7.2')
     # 192.168.7.2
