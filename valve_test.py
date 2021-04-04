@@ -50,7 +50,7 @@ class Valve:
         """
 
         t = time.process_time()
-        if self.type != 'Solenoid':
+        if self.type != 'solenoid':
             self.state = 'Partially Opened'
         self.df = pd.DataFrame([[t, 0.1]], columns=['time', 'position'])
 

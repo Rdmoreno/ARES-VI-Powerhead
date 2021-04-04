@@ -66,16 +66,19 @@ def leak_test():
     fill_valve.close()
     vent_valve.close()
 
-    actuator_prop.get_state()
-    actuator_solenoid.get_state()
-    fill_valve.get_state()
-    vent_valve.get_state()
+    print(actuator_prop.get_state())
+    print(actuator_solenoid.get_state())
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
 
     input('Press Enter to Open filling valve')
     print('Opening Fill Valve: Begin Filling Procedure')
     input('Press Enter to begin filling and Enter again to end filling')
     fill_valve.open()
-    fill_valve.get_state()
+    vent_valve.open()
+
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
 
     maximum_pressure = 645
     nominal_pressure = 500
@@ -87,35 +90,12 @@ def leak_test():
 
     while input_flag == 1:
         pressure = pressure_cold_flow.read_sensor()
-        # pressure = np.array([tempdata[i][0], tempdata[i][1], tempdata[i][2]])
-        # i = i + 1
         print(pressure[0])
-        if pressure[0] >= maximum_pressure:
-            time_relief = time.time()
-            print('Pressure Exceeded Maximum: Opening Relief Valve')
-            print(time_relief)
-            flag = 0
-            while pressure[0] >= maximum_pressure:
-                pressure = pressure_cold_flow.read_sensor()
-                # pressure = np.array([tempdata[i][0], tempdata[i][1], tempdata[i][2]])
-                # i = i + 1
-                print(pressure[0])
-                if flag == 0:
-                    fill_valve.close()
-                    fill_valve.get_state()
-                    vent_valve.open()
-                    vent_valve.get_state()
-                    flag = 1
-                if pressure[0] <= nominal_pressure:
-                    time_relief_end = time.time()
-                    fill_valve.open()
-                    fill_valve.get_state()
-                    vent_valve.close()
-                    vent_valve.get_state()
-                    print(time_relief_end)
         time.sleep(.1)
     fill_valve.close()
-    fill_valve.get_state()
+    vent_valve.close()
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
     final_pressure = pressure_cold_flow.read_sensor()
 
     print("Filling Completed: Current Pressure is...")
@@ -144,6 +124,21 @@ def leak_test():
             temperature_fill_time_list.append(time_fill + 30*n)
             temperature_empty_list.append(temp_empty)
             temperature_empty_time_list.append(time_empty + 30*n)
+
+            flag = 0
+
+            while pressure >= maximum_pressure:
+                pressure_relief = pressure_cold_flow.read_sensor()
+                print(pressure_relief[0])
+                if flag == 0:
+                    vent_valve.open()
+                    print(vent_valve.get_state())
+                    flag = 1
+                if pressure_relief[0] <= nominal_pressure:
+                    time_relief_end = time.time()
+                    vent_valve.close()
+                    print(vent_valve.get_state())
+                    print(time_relief_end)
 
             saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
                                    temperature_empty_list, temperature_empty_time_list]

@@ -112,14 +112,14 @@ class Valve:
             try:
                 if self.type == 'solenoid':
                     GPIO.output(self.pin0, GPIO.HIGH)
-                    time.sleep(2)
+                    time.sleep(1)
                     GPIO.output(self.pin0, GPIO.LOW)
                 else:
                     dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
                     percentage_calc = 4095 * 0.75471698
                     rounded_percentage = round(percentage_calc)
                     dac.set_voltage(rounded_percentage)
-                    time.sleep(2)
+                    time.sleep(1)
                     percentage_calc = 4095 * .1509434
                     rounded_percentage = round(percentage_calc)
                     dac.set_voltage(rounded_percentage)

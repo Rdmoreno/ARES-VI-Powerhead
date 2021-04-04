@@ -1,8 +1,8 @@
 import time
 import csv
 from itertools import zip_longest
-from sensors import Sensor
-from valve import Valve
+from sensors_test import Sensor
+from valve_test import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -20,9 +20,9 @@ official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
 actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'Solenoid', 0, 0)
-fill_valve = Valve('Fill Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_16', 0, 'Solenoid', 0, 0)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
@@ -35,12 +35,7 @@ temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
                                 'P9_14', 'P9_14', 'P9_16', '000', '000', '000')
 
 # Valve States and Tracking Global Variables
-act_prop_state = 'Actuator Propellant Valve: NOT SET'
-act_sol_state = 'Actuator Solenoid Valve: NOT SET'
-fill_state = 'Fill Solenoid Valve: NOT SET'
-vent_state = 'Vent Solenoid Valve: NOT SET'
 filling_trigger = False
-program_start_flag = True
 
 data = [dict(x=[0], y=[0], type='scattergl', mode='lines+markers')]
 layout_pressure = dict(title=dict(text='Live Pressure'),
@@ -65,6 +60,8 @@ app.layout = html.Div([
         html.H1('ARES: Team Daedalus'),
         html.Div([
             html.Button('Start', id='startbutton', n_clicks=0),
+            html.Button('Record', id='recordbutton', n_clicks=0),
+            html.Button('Open', id='openbutton', n_clicks=0),
             html.Button('Stop', id='stopbutton', n_clicks=0),
             html.Button('Save', id='savebutton', n_clicks=0),
             html.Button('Clean Up', id='finishexperiment', n_clicks=0),
@@ -79,10 +76,10 @@ app.layout = html.Div([
         ], className="pretty_container"),
         html.Div([
             html.H3('Valve State'),
-            html.Div('idle', id='actuatorpropstate'),
-            html.Div('idle', id='actuatorsolstate'),
-            html.Div('idle', id='fillstate'),
-            html.Div('idle', id='ventstate'),
+            html.Div('Actuator Propellant Valve: NOT SET', id='actuatorpropstate'),
+            html.Div('Actuator Solenoid Valve: NOT SET', id='actuatorsolstate'),
+            html.Div('Fill Solenoid Valve: NOT SET', id='fillstate'),
+            html.Div('Vent Solenoid Valve: NOT SET', id='ventstate'),
         ], className="pretty_container"),
         html.Div([
             html.H3('System State'),
@@ -120,7 +117,7 @@ app.layout = html.Div([
 
     # SET INTERVAL = 0 FOR ACTUAL TEST interval=0.1 * 1000
     dcc.Interval(id='interval-component',
-                 interval=0,
+                 interval=0.1*1000,
                  n_intervals=0),
 
     # Hidden DIV
@@ -157,22 +154,22 @@ app.layout = html.Div([
 #        raise PreventUpdate
 
 
-@app.callback(
-    [Output('placeholder1', 'children')],
-    [Input('startbutton', 'n_clicks')]
-)
-def open_valve_cold_flow_start(n_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'startbutton' in changed_id:
-        global act_prop_state, act_sol_state
-        actuator_prop.open()
-        actuator_solenoid.open()
-        act_prop_state = 'Actuator Propellant Valve: Open'
-        act_sol_state = 'Actuator Solenoid Valve: Open'
-        call = ['True']
-        return call
-    else:
-        raise PreventUpdate
+#@app.callback(
+#    [Output('placeholder1', 'children')],
+#    [Input('startbutton', 'n_clicks')]
+#)
+#def open_valve_cold_flow_start(n_clicks):
+#    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+#    if 'startbutton' in changed_id:
+#        global act_prop_state, act_sol_state
+#        actuator_prop.open()
+#        actuator_solenoid.open()
+#        act_prop_state = 'Actuator Propellant Valve: Open'
+#        act_sol_state = 'Actuator Solenoid Valve: Open'
+#        call = ['True']
+#        return call
+#    else:
+#        raise PreventUpdate
 
 
 @app.callback(
@@ -185,10 +182,19 @@ def open_valve_cold_flow_start(n_clicks):
      Output('time_official', 'children')],
     [Input('interval-component', 'n_intervals'),
      Input('startbutton', 'n_clicks'),
-     Input('stopbutton', 'n_clicks')]
+     Input('stopbutton', 'n_clicks'),
+     Input('openbutton', 'n_clicks')]
     )
-def read(n_intervals, n_clicks, m_clicks):
+def read(n_intervals, n_clicks, m_clicks, j_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if n_clicks > 0 and m_clicks == 0:
+
+        if 'openbutton' in changed_id:
+            actuator_prop.open()
+            print('Act prop opened')
+            actuator_solenoid.open()
+            print('Act Sol opened')
+
         pres, time_pres = pressure_cold_flow.read_sensor()
         temp_fill, time_fill = temperature_fill_line.read_sensor()
         temp_empty, time_empty = temperature_empty_line.read_sensor()
@@ -212,7 +218,7 @@ def read(n_intervals, n_clicks, m_clicks):
      Input(component_id='temp_empty', component_property='children'),
      Input(component_id='time_empty', component_property='children'),
      Input(component_id='time_official', component_property='children'),
-     Input('startbutton', 'n_clicks'),
+     Input('recordbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')])
 def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
                          time_empty, time_official, n_clicks, m_clicks):
@@ -247,25 +253,24 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
      ])
 def relief_pressure_check(pressure, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
-        global act_prop_state, act_sol_state, fill_state, vent_state
+        # global act_prop_state, act_sol_state, fill_state, vent_state
         maximum_pressure = 645
         nominal_pressure = 500
         if pressure >= maximum_pressure:
             time_relief = time.process_time()
             vent_valve.open()
-            fill_valve.close()
-            fill_state = 'Fill Solenoid Valve: Close'
-            vent_state = 'Vent Solenoid Valve: Open'
+            # fill_state = 'Fill Solenoid Valve: Close'
+            # vent_state = 'Vent Solenoid Valve: Open'
             print('Pressure Exceeded Maximum: Opening Relief Valve')
             print(time_relief)
             while True:
                 pres_relief = pressure_cold_flow.read_sensor()
                 if pres_relief[0] < nominal_pressure:
                     time_relief_end = time.process_time()
+                    print('Closing Relief Valve')
                     vent_valve.close()
-                    fill_valve.open()
-                    fill_state = 'Fill Solenoid Valve: Open'
-                    vent_state = 'Vent Solenoid Valve: Close'
+                    # fill_state = 'Fill Solenoid Valve: Open'
+                    # vent_state = 'Vent Solenoid Valve: Close'
                     print(time_relief_end)
                     break
             return 'Ouput: {}'.format('Pressure has returned to nominal value')
@@ -280,16 +285,14 @@ def relief_pressure_check(pressure, n_clicks, m_clicks):
      Output('actuatorsolstate', 'children'),
      Output('fillstate', 'children'),
      Output('ventstate', 'children')],
-    [Input('startbutton', 'n_clicks'),
-     Input('stopbutton', 'n_clicks')])
-def valve_state(n_clicks, m_clicks):
+    [Input('startbutton', 'n_clicks')
+     ])
+def valve_state(n_clicks):
     if n_clicks > 0:
-        global act_prop_state, act_sol_state, fill_state, vent_state
-
-        act_prop_update = act_prop_state
-        act_sol_update = act_sol_state
-        fill_valve_update = fill_state
-        vent_valve_update = vent_state
+        act_prop_update = actuator_prop.get_state()
+        act_sol_update = actuator_solenoid.get_state()
+        fill_valve_update = fill_valve.get_state()
+        vent_valve_update = vent_valve.get_state()
 
         return act_prop_update, act_sol_update, fill_valve_update, vent_valve_update
     else:
@@ -468,7 +471,7 @@ def filling_stop(n_clicks):
     if 'coldflowfillbutton' in changed_id:
         global filling_trigger
         filling_trigger = True
-        return 'Filling Procedure Stopped'
+        return ['Filling Procedure Stopped']
     else:
         raise PreventUpdate
 
@@ -477,7 +480,7 @@ def filling_stop(n_clicks):
     [Input('coldflowbutton', 'n_clicks'),
      Input('coldflowfillbutton', 'n_clicks')])
 def cold_flow_fill(n_clicks, m_clicks):
-    global act_prop_state, act_sol_state, fill_state, vent_state
+    #global act_prop_state, act_sol_state, fill_state, vent_state
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'coldflowbutton' in changed_id:
         global filling_trigger
@@ -503,21 +506,20 @@ def cold_flow_fill(n_clicks, m_clicks):
         actuator_solenoid.close()
         fill_valve.close()
         vent_valve.close()
-        act_prop_state = 'Actuator Propellant Valve: Closed'
-        act_sol_state = 'Actuator Solenoid Valve: Closed'
-        fill_state = 'Fill Solenoid Valve: Closed'
-        vent_state = 'Vent Solenoid Valve: Closed'
+        #act_prop_state = 'Actuator Propellant Valve: Closed'
+        #act_sol_state = 'Actuator Solenoid Valve: Closed'
+        #fill_state = 'Fill Solenoid Valve: Closed'
+        #vent_state = 'Vent Solenoid Valve: Closed'
 
         input('Press Enter to Open filling valve')
-        print('Opening Fill Valve: Begin Filling Procedure')
-        input('Press Enter to begin filling and Enter again to end filling')
-        fill_valve.open()
-        fill_state = 'Fill Solenoid Valve: Open'
+        print('Opening Fill Valve: Begin Liquid Nitrogen Filling Procedure')
+        input('Press Enter to Begin Filling and Enter again to end filling')
+        vent_valve.open()
+        #fill_state = 'Fill Solenoid Valve: Open'
 
         maximum_pressure = 645
         nominal_pressure = 500
 
-        print('Press the Cold FLow Filling Button When Desired Pressure is Met')
         time.sleep(10)
 
         while not filling_trigger:
@@ -525,41 +527,42 @@ def cold_flow_fill(n_clicks, m_clicks):
             temp_empty = temperature_empty_line.read_sensor()
             temp_fill = temperature_fill_line.read_sensor()
             print([pressure[0], temp_empty[0], temp_fill[0]])
-            if pressure[0] >= maximum_pressure:
-                time_relief = time.process_time()
-                print('Pressure Exceeded Maximum: Opening Relief Valve')
-                print(time_relief)
-                flag = 0
-                while pressure[0] >= maximum_pressure:
-                    pressure = pressure_cold_flow.read_sensor()
-                    print(pressure[0])
-                    if flag == 0:
-                        fill_valve.close()
-                        fill_state = 'Fill Solenoid Valve: Closed'
-                        vent_valve.open()
-                        vent_state = 'Vent Solenoid Valve: Open'
-                        flag = 1
-                    if pressure[0] <= nominal_pressure:
-                        time_relief_end = time.process_time()
-                        fill_valve.open()
-                        fill_state = 'Fill Solenoid Valve: Open'
-                        vent_valve.close()
-                        vent_state = 'Vent Solenoid Valve: Closed'
-                        print(time_relief_end)
+            # if pressure[0] >= maximum_pressure:
+            #     time_relief = time.process_time()
+            #     print('Pressure Exceeded Maximum: Opening Relief Valve')
+            #     print(time_relief)
+            #     flag = 0
+            #     while pressure[0] >= maximum_pressure:
+            #         pressure = pressure_cold_flow.read_sensor()
+            #         print(pressure[0])
+            #         if flag == 0:
+            #             fill_valve.close()
+            #             #fill_state = 'Fill Solenoid Valve: Closed'
+            #             vent_valve.open()
+            #             #vent_state = 'Vent Solenoid Valve: Open'
+            #             flag = 1
+            #         if pressure[0] <= nominal_pressure:
+            #             time_relief_end = time.process_time()
+            #             fill_valve.open()
+            #             #fill_state = 'Fill Solenoid Valve: Open'
+            #             vent_valve.close()
+            #             #vent_state = 'Vent Solenoid Valve: Closed'
+            #             print(time_relief_end)
             time.sleep(.3)
         filling_trigger = False
         fill_valve.close()
-        fill_state = 'Fill Solenoid Valve: Closed'
+        print('Closing Vent Valve')
+        #fill_state = 'Fill Solenoid Valve: Closed'
         final_pressure = pressure_cold_flow.read_sensor()
         pressure_message = 'Final Liquid Nitrogen Fill Pressure: {}'.format(final_pressure[0])
         print(pressure_message)
 
-        input('Press Enter to Open filling valve')
+        input('Press Enter to Open Filling and Vent valve')
         fill_valve.open()
-        fill_state = 'Fill Solenoid Valve: Open'
+        vent_valve.open()
+        #fill_state = 'Fill Solenoid Valve: Open'
         print('Opening Fill Valve: Begin Helium Filling Procedure')
-        input('Press Enter to begin filling')
-        print('Press the Cold FLow Filling Button When Desired Pressure is Met')
+        input('Press Enter to Begin Filling, Press Enter again to End')
         time.sleep(10)
 
         while not filling_trigger:
@@ -567,36 +570,38 @@ def cold_flow_fill(n_clicks, m_clicks):
             temp_empty = temperature_empty_line.read_sensor()
             temp_fill = temperature_fill_line.read_sensor()
             print([pressure[0], temp_empty[0], temp_fill[0]])
-            if pressure[0] >= maximum_pressure:
-                time_relief = time.process_time()
-                print('Pressure Exceeded Maximum: Opening Relief Valve')
-                print(time_relief)
-                flag = 0
-                while pressure[0] >= maximum_pressure:
-                    pressure = pressure_cold_flow.read_sensor()
-                    print(pressure[0])
-                    if flag == 0:
-                        fill_valve.close()
-                        fill_state = 'Fill Solenoid Valve: Closed'
-                        vent_valve.open()
-                        vent_state = 'Vent Solenoid Valve: Open'
-                        flag = 1
-                    if pressure[0] <= nominal_pressure:
-                        time_relief_end = time.process_time()
-                        fill_valve.open()
-                        fill_state = 'Fill Solenoid Valve: Open'
-                        vent_valve.close()
-                        vent_state = 'Vent Solenoid Valve: Closed'
-                        print(time_relief_end)
+            # if pressure[0] >= maximum_pressure:
+            #     time_relief = time.process_time()
+            #     print('Pressure Exceeded Maximum: Opening Relief Valve')
+            #     print(time_relief)
+            #     flag = 0
+            #     while pressure[0] >= maximum_pressure:
+            #         pressure = pressure_cold_flow.read_sensor()
+            #         print(pressure[0])
+            #         if flag == 0:
+            #             fill_valve.close()
+            #             #fill_state = 'Fill Solenoid Valve: Closed'
+            #             vent_valve.open()
+            #             #vent_state = 'Vent Solenoid Valve: Open'
+            #             flag = 1
+            #         if pressure[0] <= nominal_pressure:
+            #             time_relief_end = time.process_time()
+            #             fill_valve.open()
+            #             #fill_state = 'Fill Solenoid Valve: Open'
+            #             vent_valve.close()
+            #             #vent_state = 'Vent Solenoid Valve: Closed'
+            #             print(time_relief_end)
             time.sleep(.3)
         fill_valve.close()
-        fill_state = 'Fill Solenoid Valve: Closed'
+        vent_valve.close()
+        print('Closing Fill and Vent Valve')
+        #fill_state = 'Fill Solenoid Valve: Closed'
         final_pressure = pressure_cold_flow.read_sensor()
         pressure_message = 'Final Helium Fill Pressure: {}'.format(final_pressure[0])
         print(pressure_message)
         input('Cold Flow Filling Procedure Completed: Press Enter to Confirm')
         print('done')
-        return 'Cold Flow Filling Finished: Press Start'
+        return 'Cold Flow Filling Finished: Press Open to Begin Cold Flow'
     else:
         raise PreventUpdate
 
@@ -655,15 +660,16 @@ def check_system(n_clicks):
 def cleanup_procedure(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'finishexperiment' in changed_id:
-        global act_prop_state, act_sol_state, fill_state, vent_state
+        #global act_prop_state, act_sol_state, fill_state, vent_state
+        print('Opening All Valves')
         actuator_prop.open()
         actuator_solenoid.open()
         fill_valve.open()
         vent_valve.open()
-        act_prop_state = 'Actuator Propellant Valve: Open'
-        act_sol_state = 'Actuator Solenoid Valve: Open'
-        fill_state = 'Fill Solenoid Valve: Open'
-        vent_state = 'Vent Solenoid Valve: Open'
+        #act_prop_state = 'Actuator Propellant Valve: Open'
+        #act_sol_state = 'Actuator Solenoid Valve: Open'
+        #fill_state = 'Fill Solenoid Valve: Open'
+        #vent_state = 'Vent Solenoid Valve: Open'
         call = ['True']
         return call
     else:
