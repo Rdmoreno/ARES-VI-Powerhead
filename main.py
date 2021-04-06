@@ -4,6 +4,7 @@ import csv
 from Adafruit_BBIO import GPIO
 from sensors import Sensor
 from valve import Valve
+from sensors import Sensor
 from Adafruit_I2C import Adafruit_I2C
 import numpy as np
 
@@ -24,23 +25,28 @@ actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0
 fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
 vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 
-input('Press Enter to Open')
-actuator_prop.open()
-input('Press Enter to Close')
-actuator_prop.close()
-input('Press Enter to Open')
-actuator_solenoid.open()
-input('Press Enter to Close')
-actuator_solenoid.close()
-input('Press Enter to Open')
-fill_valve.open()
-input('Press Enter to Close')
-fill_valve.close()
-input('Press Enter to Open')
-vent_valve.open()
-input('Press Enter to Close')
-vent_valve.close()
-input('Press Enter to End')
+#input('Press Enter to Open')
+#actuator_prop.open()
+#input('Press Enter to Close')
+#actuator_prop.close()
+#input('Press Enter to Open')
+#actuator_solenoid.open()
+#input('Press Enter to Close')
+#actuator_solenoid.close()
+#input('Press Enter to Open')
+#fill_valve.open()
+#input('Press Enter to Close')
+#fill_valve.close()
+#input('Press Enter to Open')
+#vent_valve.open()
+#input('Press Enter to Close')
+#vent_valve.close()
+#input('Press Enter to End')
+
+pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_12',
+                            'P9_12', '011', '101', '111')
+
+print(pressure_cold_flow.read_sensor())
 
 #for x in range(10):
 #    pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')

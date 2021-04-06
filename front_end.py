@@ -1,8 +1,8 @@
 import time
 import csv
 from itertools import zip_longest
-from sensors_test import Sensor
-from valve_test import Valve
+from sensors import Sensor
+from valve import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -19,14 +19,14 @@ temperature_empty_time_list = ["time"]
 official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
-fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_12', 'P8_12', 'Prop', 4, 100)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_16', 0, 'solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_4', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_8', 0, 'solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
-pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
-                            'P9_16', '000', '001', '010')
+pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_12',
+                            'P9_12', '011', '101', '111')
 
 # Temperature Sensor Definition and Classes
 temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
@@ -186,14 +186,14 @@ app.layout = html.Div([
      Input('openbutton', 'n_clicks')]
     )
 def read(n_intervals, n_clicks, m_clicks, j_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    #changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if n_clicks > 0 and m_clicks == 0:
 
-        if 'openbutton' in changed_id:
-            actuator_prop.open()
-            print('Act prop opened')
-            actuator_solenoid.open()
-            print('Act Sol opened')
+        #if 'openbutton' in changed_id:
+        #    actuator_prop.open()
+        #    print('Act prop opened')
+        #    actuator_solenoid.open()
+        #    print('Act Sol opened')
 
         pres, time_pres = pressure_cold_flow.read_sensor()
         temp_fill, time_fill = temperature_fill_line.read_sensor()
@@ -218,7 +218,7 @@ def read(n_intervals, n_clicks, m_clicks, j_clicks):
      Input(component_id='temp_empty', component_property='children'),
      Input(component_id='time_empty', component_property='children'),
      Input(component_id='time_official', component_property='children'),
-     Input('recordbutton', 'n_clicks'),
+     Input('startbutton', 'n_clicks'),
      Input('stopbutton', 'n_clicks')])
 def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
                          time_empty, time_official, n_clicks, m_clicks):
@@ -245,39 +245,39 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
         raise PreventUpdate
 
 
-@app.callback(
-    Output(component_id='pressurerelief', component_property='children'),
-    [Input(component_id='pressure', component_property='children'),
-     Input('startbutton', 'n_clicks'),
-     Input('stopbutton', 'n_clicks')
-     ])
-def relief_pressure_check(pressure, n_clicks, m_clicks):
-    if n_clicks > 0 and m_clicks == 0:
-        # global act_prop_state, act_sol_state, fill_state, vent_state
-        maximum_pressure = 645
-        nominal_pressure = 500
-        if pressure >= maximum_pressure:
-            time_relief = time.process_time()
-            vent_valve.open()
-            # fill_state = 'Fill Solenoid Valve: Close'
-            # vent_state = 'Vent Solenoid Valve: Open'
-            print('Pressure Exceeded Maximum: Opening Relief Valve')
-            print(time_relief)
-            while True:
-                pres_relief = pressure_cold_flow.read_sensor()
-                if pres_relief[0] < nominal_pressure:
-                    time_relief_end = time.process_time()
-                    print('Closing Relief Valve')
-                    vent_valve.close()
-                    # fill_state = 'Fill Solenoid Valve: Open'
-                    # vent_state = 'Vent Solenoid Valve: Close'
-                    print(time_relief_end)
-                    break
-            return 'Ouput: {}'.format('Pressure has returned to nominal value')
-        else:
-            raise PreventUpdate
-    else:
-        raise PreventUpdate
+#@app.callback(
+#    Output(component_id='pressurerelief', component_property='children'),
+#    [Input(component_id='pressure', component_property='children'),
+#     Input('startbutton', 'n_clicks'),
+#     Input('stopbutton', 'n_clicks')
+#     ])
+#def relief_pressure_check(pressure, n_clicks, m_clicks):
+#    if n_clicks > 0 and m_clicks == 0:
+#        # global act_prop_state, act_sol_state, fill_state, vent_state
+#        maximum_pressure = 645
+#        nominal_pressure = 500
+#        if pressure >= maximum_pressure:
+#            time_relief = time.process_time()
+#            vent_valve.open()
+#            # fill_state = 'Fill Solenoid Valve: Close'
+#            # vent_state = 'Vent Solenoid Valve: Open'
+#            print('Pressure Exceeded Maximum: Opening Relief Valve')
+#            print(time_relief)
+#            while True:
+#                pres_relief = pressure_cold_flow.read_sensor()
+#                if pres_relief[0] < nominal_pressure:
+#                    time_relief_end = time.process_time()
+#                    print('Closing Relief Valve')
+#                    vent_valve.close()
+#                    # fill_state = 'Fill Solenoid Valve: Open'
+#                    # vent_state = 'Vent Solenoid Valve: Close'
+#                    print(time_relief_end)
+#                    break
+#            return 'Ouput: {}'.format('Pressure has returned to nominal value')
+#        else:
+#            raise PreventUpdate
+#    else:
+#        raise PreventUpdate
 
 
 @app.callback(
@@ -677,5 +677,5 @@ def cleanup_procedure(n_clicks):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='192.168.7.2')
+    app.run_server(debug=False, host='192.168.7.2')
     # 192.168.7.2
