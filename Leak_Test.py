@@ -1,7 +1,7 @@
 import csv
 import time
-from sensors import Sensor
-from valve import Valve
+from sensors_test import Sensor
+from valve_test import Valve
 from itertools import zip_longest
 import threading
 
@@ -9,8 +9,7 @@ input_flag = 1
 
 
 def leak_test():
-
-    time_duration = 300
+    time_duration = 43200
 
     # Data Frames for Saving
     pressure_list = ["Pressure"]
@@ -57,7 +56,7 @@ def leak_test():
             fill_valve.verify_connection_valve and vent_valve.verify_connection_valve:
         input("\nPress Enter to Start Verification Again:")
     print("\nAll Valves are Functional\n")
-    print("\nVerification Complete, Press Enter to Continue:\n")
+    input("\nVerification Complete, Press Enter to Continue:\n")
 
     print()
     print('Closing All Valves')
@@ -80,9 +79,6 @@ def leak_test():
     print(fill_valve.get_state())
     print(vent_valve.get_state())
 
-    maximum_pressure = 645
-    nominal_pressure = 500
-
     print('Press Enter When Desired Pressure is Met')
     time.sleep(3)
     i = threading.Thread(target=get_input)
@@ -101,55 +97,17 @@ def leak_test():
     print("Filling Completed: Current Pressure is...")
     print(final_pressure[0])
     input("Press Enter to Begin Leak Test")
+    print('Beginning Leak Test')
 
     time_start = time.time()
+    wait_time = 600
     n = 0
 
     while time.time() - time_start < time_duration:
-        pressure_list = []
-        pressure_time_list = []
-        temperature_fill_list = []
-        temperature_fill_time_list = []
-        temperature_empty_list = []
-        temperature_empty_time_list = []
-
-        for i in range(1000):
-            pressure, time_pres = pressure_cold_flow.read_sensor()
-            temp_fill, time_fill = temperature_fill_line.read_sensor()
-            temp_empty, time_empty = temperature_empty_line.read_sensor()
-
-            pressure_list.append(pressure)
-            pressure_time_list.append(time_pres + 30*n)
-            temperature_fill_list.append(temp_fill)
-            temperature_fill_time_list.append(time_fill + 30*n)
-            temperature_empty_list.append(temp_empty)
-            temperature_empty_time_list.append(time_empty + 30*n)
-
-            flag = 0
-
-            while pressure >= maximum_pressure:
-                pressure_relief = pressure_cold_flow.read_sensor()
-                print(pressure_relief[0])
-                if flag == 0:
-                    vent_valve.open()
-                    print(vent_valve.get_state())
-                    flag = 1
-                if pressure_relief[0] <= nominal_pressure:
-                    time_relief_end = time.time()
-                    vent_valve.close()
-                    print(vent_valve.get_state())
-                    print(time_relief_end)
-
-            saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
-                                   temperature_empty_list, temperature_empty_time_list]
-            export_data = zip_longest(*saved_data_combined, fillvalue='')
-
-        with open('leak_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
-            wr = csv.writer(myfile)
-            wr.writerows(export_data)
-        myfile.close()
+        read_sensors(n, time_start, wait_time)
+        time.sleep(wait_time)
         n = n + 1
-        time.sleep(30)
+
     print('done')
     print(time.time() - time_start)
     input('Press Enter to Open Valves and Depressurize Tank')
@@ -170,5 +128,69 @@ def get_input():
     input_flag = False
 
 
+def read_sensors(n, time_start, wait_time):
+
+    # Valve Definition and Classes
+    vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+
+    # Pressure Sensor Definition and Classes
+    pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
+                                'P9_16', '000', '000', '000')
+
+    # Temperature Sensor Definition and Classes
+    temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
+                                   'P9_14', 'P9_16', '000', '000', '000')
+    temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
+                                    'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
+    maximum_pressure = 645
+    nominal_pressure = 500
+
+    pressure_list = []
+    pressure_time_list = []
+    temperature_fill_list = []
+    temperature_fill_time_list = []
+    temperature_empty_list = []
+    temperature_empty_time_list = []
+
+    for i in range(1000):
+        pressure, time_pres = pressure_cold_flow.read_sensor()
+        temp_fill, time_fill = temperature_fill_line.read_sensor()
+        temp_empty, time_empty = temperature_empty_line.read_sensor()
+
+        pressure_list.append(pressure)
+        pressure_time_list.append(time_pres + wait_time * n)
+        temperature_fill_list.append(temp_fill)
+        temperature_fill_time_list.append(time_fill + wait_time * n)
+        temperature_empty_list.append(temp_empty)
+        temperature_empty_time_list.append(time_empty + wait_time * n)
+
+        flag = 0
+
+        while pressure >= maximum_pressure:
+            pressure_relief = pressure_cold_flow.read_sensor()
+            print(pressure_relief[0])
+            if flag == 0:
+                vent_valve.open()
+                print(vent_valve.get_state())
+                flag = 1
+            if pressure_relief[0] <= nominal_pressure:
+                time_relief_end = time.time()
+                vent_valve.close()
+                print(vent_valve.get_state())
+                print(time_relief_end)
+
+    current_time = 'Time Update: {} seconds'.format(time.time() - time_start)
+    print(current_time)
+    saved_data_combined = [pressure_list, pressure_time_list, temperature_fill_list, temperature_fill_time_list,
+                           temperature_empty_list, temperature_empty_time_list]
+    export_data = zip_longest(*saved_data_combined, fillvalue='')
+
+    with open('leak_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
+        wr = csv.writer(myfile)
+        wr.writerows(export_data)
+    myfile.close()
+
+
 j = threading.Thread(target=leak_test)
 j.start()
+
