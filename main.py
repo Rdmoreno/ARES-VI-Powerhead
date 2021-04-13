@@ -43,10 +43,18 @@ vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 #vent_valve.close()
 #input('Press Enter to End')
 
-pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_12',
-                            'P9_12', '011', '101', '111')
+pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
+                            'P9_16', '000', '000', '000')
 
-print(pressure_cold_flow.read_sensor())
+while True:
+    a = pressure_cold_flow.read_sensor()
+    print(a[0])
+    print()
+    input()
+
+
+
+#print(pressure_cold_flow.read_sensor())
 
 #for x in range(10):
 #    pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')
@@ -56,7 +64,7 @@ print(pressure_cold_flow.read_sensor())
 #print(np.sum(avg) / len(avg))
 
 
-# for y in range(3):
+#for y in range(3):
 #    print(pin_stuff[y])
 #    for x in range(8):
 #        pressure_test = Sensor('sensor_test_class', 'temperature', pin_stuff[y], pin_stuff[y], pin_stuff[y],
@@ -64,6 +72,36 @@ print(pressure_cold_flow.read_sensor())
 #        stuff = pressure_test.read_sensor()
 #        list_val[x] = stuff[0]
 #        print()
+#    print()
+
+#channel = ['000', '001', '010', '100', '011', '101', '110', '111']
+
+#print('P9_16')
+#pin = 'P9_16'
+#for x in range(8):
+#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
+#                           channel[x], channel[x], channel[x])
+#    stuff = pressure_test.read_sensor()
+#    #list_val = stuff[0]
+#    #print(list_val)
+#    print()
+#print('P9_14')
+#pin = 'P9_14'
+#for x in range(8):
+#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
+#                           channel[x], channel[x], channel[x])
+#    stuff = pressure_test.read_sensor()
+#    #list_val = stuff[0]
+#    #print(list_val)
+#    print()
+#print('P9_12')
+#pin = 'P9_12'
+#for x in range(8):
+#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
+#                           channel[x], channel[x], channel[x])
+#    stuff = pressure_test.read_sensor()
+#    #list_val = stuff[0]
+#    #print(list_val)
 #    print()
 
 
