@@ -42,13 +42,12 @@ class Sensor:
         self.channel2 = given_channel1
         self.channel3 = given_channel2
         self.channel = [given_channel0, given_channel1, given_channel2]
-        if self.type == 'pressure' or 'temperature':
-            GPIO.setup(given_pin0, GPIO.OUT)
-            GPIO.output(given_pin0, GPIO.HIGH)
-            GPIO.setup(given_pin1, GPIO.OUT)
-            GPIO.output(given_pin1, GPIO.HIGH)
-            GPIO.setup(given_pin2, GPIO.OUT)
-            GPIO.output(given_pin2, GPIO.HIGH)
+        GPIO.setup(given_pin0, GPIO.OUT)
+        GPIO.output(given_pin0, GPIO.HIGH)
+        GPIO.setup(given_pin1, GPIO.OUT)
+        GPIO.output(given_pin1, GPIO.HIGH)
+        GPIO.setup(given_pin2, GPIO.OUT)
+        GPIO.output(given_pin2, GPIO.HIGH)
 
     def read_sensor(self):
         """
@@ -105,10 +104,14 @@ class Sensor:
             byte_1 = int(('000001' + bit_channel[0:2]), base=2)
             byte_2 = int((bit_channel[2:4] + '000000'), base=2)
             byte_3 = 0b00000000
+
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            reference_voltage = 4870
-            data_conversion = (int(raw_data[4:], 2) / 4095 * reference_voltage)
+            if self.type == 'pressure':
+                reference_voltage = 150*2
+            else:
+                reference_voltage = 4870
+            data_conversion = int((int(raw_data[4:], 2) / 4095 * reference_voltage))
             processed_data[x] = data_conversion
 
             spi.close()

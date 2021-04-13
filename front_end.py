@@ -1,8 +1,8 @@
 import time
 import csv
 from itertools import zip_longest
-from sensors_test import Sensor
-from valve_test import Valve
+from sensors import Sensor
+from valve import Valve
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -33,6 +33,8 @@ temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
                                'P9_12', 'P9_12', '000', '000', '000')
 temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
                                 'P9_14', 'P9_14', 'P9_16', '000', '000', '000')
+# Relief Valve Counter: Will always start at zero
+counter = 0
 
 # Valve States and Tracking Global Variables
 filling_trigger = False
@@ -206,8 +208,8 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
             official_time_list.append(time_official)
 
         pres_update = 'Current Pressure: {}'.format(pressure)
-        fill_update = 'Current Pressure: {}'.format(temp_fill)
-        empty_update = 'Current Pressure: {}'.format(temp_empty)
+        fill_update = 'Temperature Fill: {}'.format(temp_fill)
+        empty_update = 'Temperature Empty: {}'.format(temp_empty)
 
         return data_pres, data_fill, data_empty, pres_update, fill_update, empty_update
     else:
@@ -222,14 +224,19 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
      ])
 def relief_pressure_check(pressure, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
-        # global act_prop_state, act_sol_state, fill_state, vent_state
-        maximum_pressure = 645
+        global counter
+        # change the maximum pressure to 645 during actual experiment
+        maximum_pressure = 5000
         nominal_pressure = 500
+
         if pressure >= maximum_pressure:
+            counter = counter + 1
+        else:
+            counter = 0
+
+        if counter >= 3:
             time_relief = time.process_time()
             vent_valve.open()
-            # fill_state = 'Fill Solenoid Valve: Close'
-            # vent_state = 'Vent Solenoid Valve: Open'
             print('Pressure Exceeded Maximum: Opening Relief Valve')
             print(time_relief)
             while True:
@@ -238,8 +245,6 @@ def relief_pressure_check(pressure, n_clicks, m_clicks):
                     time_relief_end = time.process_time()
                     print('Closing Relief Valve')
                     vent_valve.close()
-                    # fill_state = 'Fill Solenoid Valve: Open'
-                    # vent_state = 'Vent Solenoid Valve: Close'
                     print(time_relief_end)
                     break
             return 'Ouput: {}'.format('Pressure has returned to nominal value')
@@ -584,10 +589,6 @@ def cleanup_procedure(n_clicks):
         actuator_solenoid.open()
         fill_valve.open()
         vent_valve.open()
-        # act_prop_state = 'Actuator Propellant Valve: Open'
-        # act_sol_state = 'Actuator Solenoid Valve: Open'
-        # fill_state = 'Fill Solenoid Valve: Open'
-        # vent_state = 'Vent Solenoid Valve: Open'
         call = ['True']
         return call
     else:

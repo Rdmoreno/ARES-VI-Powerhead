@@ -6,10 +6,11 @@ from itertools import zip_longest
 import threading
 
 input_flag = 1
+counter = 0
 
 
 def leak_test():
-    time_duration = 43200
+    time_duration = 86400
 
     # Data Frames for Saving
     pressure_list = ["Pressure"]
@@ -153,6 +154,7 @@ def read_sensors(n, time_start, wait_time):
     temperature_empty_time_list = []
 
     for i in range(1000):
+        global counter
         pressure, time_pres = pressure_cold_flow.read_sensor()
         temp_fill, time_fill = temperature_fill_line.read_sensor()
         temp_empty, time_empty = temperature_empty_line.read_sensor()
@@ -164,20 +166,24 @@ def read_sensors(n, time_start, wait_time):
         temperature_empty_list.append(temp_empty)
         temperature_empty_time_list.append(time_empty + wait_time * n)
 
-        flag = 0
+        if pressure >= maximum_pressure:
+            counter = counter + 1
+        else:
+            counter = 0
 
-        while pressure >= maximum_pressure:
-            pressure_relief = pressure_cold_flow.read_sensor()
-            print(pressure_relief[0])
-            if flag == 0:
-                vent_valve.open()
-                print(vent_valve.get_state())
-                flag = 1
-            if pressure_relief[0] <= nominal_pressure:
-                time_relief_end = time.time()
-                vent_valve.close()
-                print(vent_valve.get_state())
-                print(time_relief_end)
+        if counter >= 3:
+            time_relief = time.process_time()
+            vent_valve.open()
+            print('Pressure Exceeded Maximum: Opening Relief Valve')
+            print(time_relief)
+            while True:
+                pres_relief = pressure_cold_flow.read_sensor()
+                if pres_relief[0] < nominal_pressure:
+                    time_relief_end = time.process_time()
+                    print('Closing Relief Valve')
+                    vent_valve.close()
+                    print(time_relief_end)
+                    break
 
     current_time = 'Time Update: {} seconds'.format(time.time() - time_start)
     print(current_time)
