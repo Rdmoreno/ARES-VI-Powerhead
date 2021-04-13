@@ -107,7 +107,10 @@ class Sensor:
 
             adc = spi.xfer2([byte_1, byte_2, byte_3])
             raw_data = format(adc[1], '08b') + format(adc[2], '08b')
-            reference_voltage = 4870
+            if self.type == 'pressure':
+                reference_voltage = 150*2
+            else:
+                reference_voltage = 4870
             data_conversion = int((int(raw_data[4:], 2) / 4095 * reference_voltage))
             processed_data[x] = data_conversion
 
