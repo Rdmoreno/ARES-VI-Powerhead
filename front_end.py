@@ -126,6 +126,23 @@ app.layout = html.Div([
                  className="pretty_container")
     ],
         className='twelve columns'),
+    html.Div([
+        html.H3('Override Buttons'),
+        dcc.Input(id="inputpercentage", type="text", placeholder="Percent Open"),
+        html.Button('Actuator Prop Open', id='actuatorpropopen', n_clicks=0),
+        html.Button('Actuator Prop Percent Open', id='actuatorproppercentopen', n_clicks=0),
+        html.Button('Actuator Sol Open', id='actuatorsolopen', n_clicks=0),
+        html.Button('Pressurant Valve Open', id='pressurantvalveopen', n_clicks=0),
+        html.Button('Fill Valve Open', id='ventvalveopen', n_clicks=0),
+        html.Button('Actuator Prop Close', id='actuatorpropclose', n_clicks=0),
+        html.Button('Actuator Sol Close', id='actuatorsolclose', n_clicks=0),
+        html.Button('Pressurant Valve Close', id='pressurantvalvclose', n_clicks=0),
+        html.Button('Fill Valve Close', id='ventvalveclose', n_clicks=0),
+        html.Button('All Valves Close', id='allvalveclose', n_clicks=0),
+        html.Button('All Valves Open', id='allvalveopen', n_clicks=0),
+        html.Div('idle', id='emergencyholder'),
+    ],
+        className='pretty_container four columns'),
 
     # SET INTERVAL = 0 FOR ACTUAL TEST interval=0.1 * 1000
     dcc.Interval(id='interval-component',
@@ -196,24 +213,57 @@ def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
                          time_empty, time_official, n_clicks, m_clicks, j_clicks):
     if n_clicks > 0 and j_clicks == 0:
 
-        data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
-        data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
-        data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
+        #data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
+        #data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
+        #data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
 
-        if m_clicks > 0:
-            pressure_list.append(pressure)
-            pressure_time_list.append(time_pres)
-            temperature_fill_list.append(temp_fill)
-            temperature_fill_time_list.append(time_fill)
-            temperature_empty_list.append(temp_empty)
-            temperature_empty_time_list.append(time_empty)
-            official_time_list.append(time_official)
+        #if m_clicks > 0:
+        #    pressure_list.append(pressure)
+        #    pressure_time_list.append(time_pres)
+        #    temperature_fill_list.append(temp_fill)
+        #    temperature_fill_time_list.append(time_fill)
+        #    temperature_empty_list.append(temp_empty)
+        #    temperature_empty_time_list.append(time_empty)
+        #    official_time_list.append(time_official)
 
         pres_update = 'Current Pressure: {}'.format(pressure)
         fill_update = 'Temperature Fill: {}'.format(temp_fill)
         empty_update = 'Temperature Empty: {}'.format(temp_empty)
+        # return data_pres, data_fill, data_empty, pres_update, fill_update, empty_update
+        return pres_update, fill_update, empty_update
+    else:
+        raise PreventUpdate
 
-        return data_pres, data_fill, data_empty, pres_update, fill_update, empty_update
+
+@app.callback(
+    [Output(component_id='pres_graph', component_property='extendData'),
+     Output(component_id='fill_graph', component_property='extendData'),
+     Output(component_id='empty_graph', component_property='extendData')],
+    [Input(component_id='pressure', component_property='children'),
+     Input(component_id='time_pres', component_property='children'),
+     Input(component_id='temp_fill', component_property='children'),
+     Input(component_id='time_fill', component_property='children'),
+     Input(component_id='temp_empty', component_property='children'),
+     Input(component_id='time_empty', component_property='children'),
+     Input(component_id='time_official', component_property='children'),
+     Input('recordbutton', 'n_clicks'),
+     Input('stopbutton', 'n_clicks')])
+def record_data(pressure, time_pres, temp_fill, time_fill, temp_empty, time_empty, time_official, n_clicks, j_clicks):
+    if n_clicks > 0 and j_clicks == 0:
+
+        data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
+        data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
+        data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
+
+        pressure_list.append(pressure)
+        pressure_time_list.append(time_pres)
+        temperature_fill_list.append(temp_fill)
+        temperature_fill_time_list.append(time_fill)
+        temperature_empty_list.append(temp_empty)
+        temperature_empty_time_list.append(time_empty)
+        official_time_list.append(time_official)
+
+        return data_pres, data_fill, data_empty
     else:
         raise PreventUpdate
 
@@ -428,6 +478,80 @@ def cleanup_procedure(n_clicks):
         fill_valve.open()
         vent_valve.open()
         call = ['True']
+        return call
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    Output('emergencyholder', 'children'),
+    [Input('inputpercentage', 'value'),
+     Input('actuatorproppercentopen', 'n_clicks'),
+     Input('actuatorpropopen', 'n_clicks'),
+     Input('actuatorsolopen', 'n_clicks'),
+     Input('pressurantvalveopen', 'n_clicks'),
+     Input('ventvalveopen', 'n_clicks'),
+     Input('actuatorpropclose', 'n_clicks'),
+     Input('actuatorsolclose', 'n_clicks'),
+     Input('pressurantvalvclose', 'n_clicks'),
+     Input('ventvalveclose', 'n_clicks'),
+     Input('allvalveclose', 'n_clicks'),
+     Input('allvalveopen', 'n_clicks')
+     ]
+)
+def override_commands(input1, n1_clicks, n2_clicks, n3_clicks, n4_clicks, n5_clicks, n6_clicks, n7_clicks, n8_clicks,
+                      n9_clicks, n10_clicks, n11_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'actuatorpropopen' in changed_id:
+        actuator_prop.open()
+        call = 'Actuator Prop Opened'
+        return call
+    elif 'actuatorproppercentopen' in changed_id:
+        actuator_prop_partial = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, input1)
+        actuator_prop_partial.partial_open()
+        call = 'Actuator Prop Opened {} percent'.format(input1)
+        return call
+    elif 'actuatorsolopen' in changed_id:
+        actuator_solenoid.open()
+        call = 'Actuator Solenoid Opened'
+        return call
+    elif 'pressurantvalveopen' in changed_id:
+        fill_valve.open()
+        call = 'Pressurant Valve Opened'
+        return call
+    elif 'ventvalveopen' in changed_id:
+        vent_valve.open()
+        call = 'Vent Valve Opened'
+        return call
+    elif 'actuatorpropclose' in changed_id:
+        actuator_prop.open()
+        call = 'Actuator Prop Closed'
+        return call
+    elif 'actuatorsolclose' in changed_id:
+        actuator_solenoid.open()
+        call = 'Actuator Solenoid Closed'
+        return call
+    elif 'pressurantvalvclose' in changed_id:
+        fill_valve.open()
+        call = 'Pressurant Valve Closed'
+        return call
+    elif 'ventvalveclose' in changed_id:
+        vent_valve.open()
+        call = 'Vent Valve Closed'
+        return call
+    elif 'allvalveclose' in changed_id:
+        vent_valve.close()
+        fill_valve.close()
+        actuator_solenoid.close()
+        actuator_prop.close()
+        call = 'All Valves Closed'
+        return call
+    elif 'allvalveopen' in changed_id:
+        vent_valve.open()
+        fill_valve.open()
+        actuator_solenoid.open()
+        actuator_prop.open()
+        call = 'All Valves Opened'
         return call
     else:
         raise PreventUpdate
