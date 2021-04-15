@@ -20,16 +20,25 @@ import numpy as np
 GPIO.setup('P8_46', GPIO.OUT)
 GPIO.output('P8_46', GPIO.HIGH)
 
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'solenoid', 4, 100)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 50)
 actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
 fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
 vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 
-#input('Press Enter to Open')
-#actuator_prop.open()
-#input('Press Enter to Close')
-#actuator_prop.close()
-#input('Press Enter to Open')
+for x in range(11):
+    i = 10*x
+    b = 'press Enter to percentage open {}'.format(i)
+    input(b)
+    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, i)
+    actuator_prop.partial_open()
+b = 'press Enter to percentage open 105'
+input(b)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 105)
+actuator_prop.partial_open()
+input('Press Enter to close')
+actuator_prop.close()
+
+
 #actuator_solenoid.open()
 #input('Press Enter to Close')
 #actuator_solenoid.close()
@@ -43,14 +52,14 @@ vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
 #vent_valve.close()
 #input('Press Enter to End')
 
-pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
-                            'P9_16', '000', '000', '000')
+#pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
+#                            'P9_16', '000', '000', '000')
 
-while True:
-    a = pressure_cold_flow.read_sensor()
-    print(a[0])
-    print()
-    input()
+#while True:
+#    a = pressure_cold_flow.read_sensor()
+#    print(a[0])
+#    print()
+#    input()
 
 
 
