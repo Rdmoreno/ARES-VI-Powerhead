@@ -33,6 +33,7 @@ temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
                                'P9_12', 'P9_12', '000', '000', '000')
 temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
                                 'P9_14', 'P9_14', 'P9_16', '000', '000', '000')
+
 # Relief Valve Counter: Will always start at zero
 counter = 0
 
@@ -72,19 +73,20 @@ app.layout = html.Div([
         html.Div([
             html.H3('Test Buttons'),
             html.Button('Check System', id='generalcheckbutton', n_clicks=0),
-            html.Button('Hardware/Software Check', id='checkbutton', n_clicks=0),
-            html.Button('Fill Check Button', id='coldflowfillbutton', n_clicks=0),
         ], className="pretty_container"),
         html.Div([
             html.H3('Cold Flow'),
             html.Button('Check', id='coldflowcheckbutton', n_clicks=0),
             html.Div('idle', id='coldflowcheckresponse'),
             html.Button('Liquid Nitrogen Fill', id='liquidfillbutton', n_clicks=0),
+            html.Button('Liquid Nitrogen Fill End', id='liquidfillbuttonend', n_clicks=0),
             html.Div('idle', id='liquidfillresponse'),
+            html.Div('idle', id='liquidfillresult'),
             html.Button('Helium Fill', id='heliumfillbutton', n_clicks=0),
+            html.Button('Helium Fill End', id='heliumfillbuttonend', n_clicks=0),
             html.Div('idle', id='heliumfillresponse'),
+            html.Div('idle', id='heliumfillresult'),
             html.Div('idle', id='coldflowready'),
-            html.Div('idle', id='coldflowconfirmed', style={'display': 'none'}),
         ], className="pretty_container"),
         html.Div([
             html.H3('Valve State'),
@@ -274,183 +276,6 @@ def valve_state(n_clicks):
 
 
 @app.callback(
-    Output('checkoutput', 'children'),
-    [Input('checkbutton', 'n_clicks')]
-)
-def hardware_software_test(n_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'checkbutton' in changed_id:
-        global act_prop_state, act_sol_state, fill_state, vent_state
-        check_flag = False
-        print(
-            "Before Test Start: Verify Electronic Connections and Follow Safety Procedures\n")
-        print("------------------------------------------")
-        print("\nProject Daedalus: Powerhead Hardware/Software Test\n")
-        print("""\
-
-                           ._ o o
-                           \_`-)|_
-                        ,""       \ 
-                      ,"  ## |   ಠ ಠ. 
-                    ," ##   ,-\__    `.
-                  ,"       /     `--._;)
-                ,"     ## /
-              ,"   ##    /
-
-
-                """)
-        print("------------------------------------------\n")
-        input("Press Enter to Start the Cold Flow Test:")
-
-        print("\nVerifying Sensor and Valve Connections\n")
-        while not pressure_cold_flow.verify_connection() and temperature_fill_line.verify_connection() \
-                and temperature_empty_line.verify_connection():
-            input("\nPress Enter to Start Verification Again:")
-        print("\nAll Sensors are Functional\n")
-
-        while not actuator_prop.verify_connection_valve and actuator_solenoid.verify_connection_valve and \
-                fill_valve.verify_connection_valve and vent_valve.verify_connection_valve:
-            input("\nPress Enter to Start Verification Again:")
-        print("\nAll Valves are Functional\n")
-        print("\nVerification Complete, Press Enter to Continue:\n")
-
-        print("\nBeginning Opening of Solenoid Valves\n")
-        while not check_flag:
-            try:
-                vent_valve.open()
-                actuator_solenoid.open()
-                fill_valve.open()
-                act_sol_state = 'Actuator Solenoid Valve: Open'
-                fill_state = 'Fill Solenoid Valve: Open'
-                vent_state = 'Vent Solenoid Valve: Open'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHave all Solenoids opened? (yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        print("\nVerification Complete, Press Enter to Continue:\n")
-        check_flag = False
-        print("\nBeginning Closing of Solenoid Valves\n")
-        while not check_flag:
-            try:
-                vent_valve.close()
-                actuator_solenoid.close()
-                fill_valve.close()
-                act_sol_state = 'Actuator Solenoid Valve: Close'
-                fill_state = 'Fill Solenoid Valve: Close'
-                vent_state = 'Vent Solenoid Valve: Close'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHave all Solenoids Closed? (yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        print("\nVerification Complete, Press Enter to Continue:\n")
-        check_flag = False
-        print("\nBeginning Opening of Actuator Valve\n")
-        while not check_flag:
-            try:
-                actuator_prop.open()
-                act_prop_state = 'Actuator Propellant Valve: Open'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHas the Actuator Opened (yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        check_flag = False
-        while not check_flag:
-            try:
-                actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 5)
-                actuator_prop_check.partial_open()
-                act_prop_state = 'Actuator Propellant Valve: Opened 5%'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHas the Actuator Opened 5% (yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        check_flag = False
-        while not check_flag:
-            try:
-                actuator_prop_check = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 50)
-                actuator_prop_check.partial_open()
-                act_prop_state = 'Actuator Propellant Valve: Opened 50%'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHas the Actuator Opened Selected percentage(yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        print("\nVerification Complete, Press Enter to Continue:\n")
-        check_flag = False
-        print("\nBeginning Closing of Actuator Valve\n")
-        while not check_flag:
-            try:
-                actuator_prop.close()
-                act_prop_state = 'Actuator Propellant Valve: Closed'
-            except Exception:
-                print(
-                    "\nERROR HAS OCCURRED: PLEASE CHECK ELECTRICAL CONNECTIONS")
-                input("\nPress Enter to Start Verification Again:")
-                continue
-            else:
-                while True:
-                    verification = input(
-                        '\nHas the Actuator Closed (yes/no)?\n')
-                    if verification == 'yes' or 'Yes':
-                        check_flag = True
-                        break
-        return 'System Check Successful'
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
-    [Output('fillcheck', 'children')],
-    [Input('coldflowfillbutton', 'n_clicks')])
-def filling_stop(n_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'coldflowfillbutton' in changed_id:
-        global filling_trigger
-        filling_trigger = True
-        return ['Filling Procedure Stopped']
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
     Output('coldflowcheckresponse', 'children'),
     [Input('coldflowcheckbutton', 'n_clicks'),
      ])
@@ -485,46 +310,59 @@ def cold_flow_check(n_clicks):
 
 @app.callback(
     Output('liquidfillresponse', 'children'),
-    [Input('coldflowcheckbutton', 'n_clicks'),
-     Input('liquidfillbutton', 'n_clicks')])
+    [Input('liquidfillbutton', 'n_clicks'),
+     Input('liquidfillbuttonend', 'n_clicks')])
 def cold_flow_nitrogen_fill(n_clicks, m_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'liquidfillbutton' in changed_id:
-        if n_clicks > 0:
-            global filling_trigger
-            vent_valve.open()
-            while not filling_trigger:
-                pass
-            filling_trigger = False
-            vent_valve.close()
-            result = pressure_cold_flow.read_sensor()
-            return 'Liquid Nitrogen Fill: {} psi'.format(result[0])
-        else:
-            raise PreventUpdate
+        vent_valve.open()
+        return 'Vent Valve Opened'
     else:
         raise PreventUpdate
 
 
 @app.callback(
-    [Output('heliumfillresponse', 'children'),
-     Output('coldflowready', 'children')],
+    Output('liquidfillresult', 'children'),
     [Input('liquidfillbutton', 'n_clicks'),
-     Input('heliumfillbutton', 'n_clicks')])
+     Input('liquidfillbuttonend', 'n_clicks'),
+     Input(component_id='pressure', component_property='children')])
+def cold_flow_nitrogen_fill_end(n_clicks, m_clicks, pressure):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'liquidfillbuttonend' in changed_id:
+        vent_valve.close()
+        result = pressure
+        return 'Vent Valve Closed: Pressure is {} psi'.format(result)
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    Output('heliumfillresponse', 'children'),
+    [Input('heliumfillbutton', 'n_clicks'),
+     Input('heliumfillbuttonend', 'n_clicks')])
 def cold_flow_helium_fill(n_clicks, m_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'heliumfillbutton' in changed_id:
-        if n_clicks > 0:
-            global filling_trigger
-            fill_valve.open()
-            vent_valve.open()
-            while not filling_trigger:
-                pass
-            fill_valve.close()
-            vent_valve.close()
-            result = pressure_cold_flow.read_sensor()
-            return ['Helium Fill: {} psi'.format(result[0]), 'Cold FLow Ready']
-        else:
-            raise PreventUpdate
+        vent_valve.open()
+        fill_valve.open()
+        return 'Vent Valve and Pressurant Line Opened'
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    [Output('heliumfillresult', 'children'),
+     Output('coldflowready', 'children')],
+    [Input('heliumfillbutton', 'n_clicks'),
+     Input('heliumfillbuttonend', 'n_clicks'),
+     Input(component_id='pressure', component_property='children')])
+def cold_flow_helium_fill_end(n_clicks, m_clicks, pressure):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'heliumfillbuttonend' in changed_id:
+        vent_valve.close()
+        fill_valve.close()
+        result = pressure
+        return 'All Valves Closed: Pressure is {} psi'.format(result), 'Ready for Cold FLow'
     else:
         raise PreventUpdate
 

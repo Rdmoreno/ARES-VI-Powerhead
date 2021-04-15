@@ -73,18 +73,20 @@ app.layout = html.Div([
             html.H3('Test Buttons'),
             html.Button('Check System', id='generalcheckbutton', n_clicks=0),
             html.Button('Hardware/Software Check', id='checkbutton', n_clicks=0),
-            html.Button('Fill Check Button', id='coldflowfillbutton', n_clicks=0),
         ], className="pretty_container"),
         html.Div([
             html.H3('Cold Flow'),
             html.Button('Check', id='coldflowcheckbutton', n_clicks=0),
             html.Div('idle', id='coldflowcheckresponse'),
             html.Button('Liquid Nitrogen Fill', id='liquidfillbutton', n_clicks=0),
+            html.Button('Liquid Nitrogen Fill End', id='liquidfillbuttonend', n_clicks=0),
             html.Div('idle', id='liquidfillresponse'),
+            html.Div('idle', id='liquidfillresult'),
             html.Button('Helium Fill', id='heliumfillbutton', n_clicks=0),
+            html.Button('Helium Fill End', id='heliumfillbuttonend', n_clicks=0),
             html.Div('idle', id='heliumfillresponse'),
+            html.Div('idle', id='heliumfillresult'),
             html.Div('idle', id='coldflowready'),
-            html.Div('idle', id='coldflowconfirmed', style={'display': 'none'}),
         ], className="pretty_container"),
         html.Div([
             html.H3('Valve State'),
@@ -438,19 +440,6 @@ def hardware_software_test(n_clicks):
 
 
 @app.callback(
-    [Output('fillcheck', 'children')],
-    [Input('coldflowfillbutton', 'n_clicks')])
-def filling_stop(n_clicks):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'coldflowfillbutton' in changed_id:
-        global filling_trigger
-        filling_trigger = True
-        return ['Filling Procedure Stopped']
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
     Output('coldflowcheckresponse', 'children'),
     [Input('coldflowcheckbutton', 'n_clicks'),
      ])
@@ -486,38 +475,58 @@ def cold_flow_check(n_clicks):
 @app.callback(
     Output('liquidfillresponse', 'children'),
     [Input('liquidfillbutton', 'n_clicks'),
-     Input('liquidfillbutton', 'n_clicks')])
-def cold_flow_nitrogen_fill(n_clicks):
+     Input('liquidfillbuttonend', 'n_clicks')])
+def cold_flow_nitrogen_fill(n_clicks, m_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'liquidfillbutton' in changed_id:
-        global filling_trigger
         vent_valve.open()
-        while not filling_trigger:
-            pass
-        filling_trigger = False
-        vent_valve.close()
-        result = pressure_cold_flow.read_sensor()
-        return 'Liquid Nitrogen Fill: {} psi'.format(result[0])
+        return 'Vent Valve Opened'
     else:
         raise PreventUpdate
 
 
 @app.callback(
-    [Output('heliumfillresponse', 'children'),
-     Output('coldflowready', 'children')],
-     [Input('heliumfillbutton', 'n_clicks')])
+    Output('liquidfillresult', 'children'),
+    [Input('liquidfillbutton', 'n_clicks'),
+     Input('liquidfillbuttonend', 'n_clicks'),
+     Input(component_id='pressure', component_property='children')])
+def cold_flow_nitrogen_fill_end(n_clicks, m_clicks, pressure):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'liquidfillbuttonend' in changed_id:
+        vent_valve.close()
+        result = pressure
+        return 'Vent Valve Closed: Pressure is {} psi'.format(result)
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    Output('heliumfillresponse', 'children'),
+    [Input('heliumfillbutton', 'n_clicks'),
+     Input('heliumfillbuttonend', 'n_clicks')])
 def cold_flow_helium_fill(n_clicks, m_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'heliumfillbutton' in changed_id:
-        global filling_trigger
-        fill_valve.open()
         vent_valve.open()
-        while not filling_trigger:
-            pass
-        fill_valve.close()
+        fill_valve.open()
+        return 'Vent Valve and Pressurant Line Opened'
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    [Output('heliumfillresult', 'children'),
+     Output('coldflowready', 'children')],
+    [Input('heliumfillbutton', 'n_clicks'),
+     Input('heliumfillbuttonend', 'n_clicks'),
+     Input(component_id='pressure', component_property='children')])
+def cold_flow_helium_fill_end(n_clicks, m_clicks, pressure):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'heliumfillbuttonend' in changed_id:
         vent_valve.close()
-        result = pressure_cold_flow.read_sensor()
-        return ['Helium Fill: {} psi'.format(result[0]), 'Cold FLow Ready']
+        fill_valve.close()
+        result = pressure
+        return 'All Valves Closed: Pressure is {} psi'.format(result), 'Ready for Cold FLow'
     else:
         raise PreventUpdate
 
