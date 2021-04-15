@@ -63,7 +63,10 @@ class Valve:
         """
 
         t = time.process_time()
-        if self.type != 'solenoid':
+        if 0 > self.partial > 105:
+            self.state = 'Partial Open Failed: Falls out of Range'
+            pass
+        elif self.type != 'solenoid':
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
             percentage_calc = 2731.7 * (self.partial / 100) + 663.29
             rounded_percentage = round(percentage_calc)

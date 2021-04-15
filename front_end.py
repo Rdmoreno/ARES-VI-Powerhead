@@ -128,18 +128,19 @@ app.layout = html.Div([
         className='twelve columns'),
     html.Div([
         html.H3('Override Buttons'),
-        dcc.Input(id="inputpercentage", type="text", placeholder="Percent Open"),
-        html.Button('Actuator Prop Open', id='actuatorpropopen', n_clicks=0),
-        html.Button('Actuator Prop Percent Open', id='actuatorproppercentopen', n_clicks=0),
-        html.Button('Actuator Sol Open', id='actuatorsolopen', n_clicks=0),
-        html.Button('Pressurant Valve Open', id='pressurantvalveopen', n_clicks=0),
-        html.Button('Fill Valve Open', id='ventvalveopen', n_clicks=0),
-        html.Button('Actuator Prop Close', id='actuatorpropclose', n_clicks=0),
-        html.Button('Actuator Sol Close', id='actuatorsolclose', n_clicks=0),
-        html.Button('Pressurant Valve Close', id='pressurantvalvclose', n_clicks=0),
-        html.Button('Fill Valve Close', id='ventvalveclose', n_clicks=0),
-        html.Button('All Valves Close', id='allvalveclose', n_clicks=0),
-        html.Button('All Valves Open', id='allvalveopen', n_clicks=0),
+        dcc.Input(id="inputpercentage", type="number", placeholder="Percent Open", debounce=True),
+        html.Div([
+            html.Button('Actuator Prop Open', id='actuatorpropopen', n_clicks=0),
+            html.Button('Actuator Prop Percent Open', id='actuatorproppercentopen', n_clicks=0),
+            html.Button('Actuator Sol Open', id='actuatorsolopen', n_clicks=0),
+            html.Button('Pressurant Valve Open', id='pressurantvalveopen', n_clicks=0),
+            html.Button('Fill Valve Open', id='ventvalveopen', n_clicks=0),
+            html.Button('Actuator Prop Close', id='actuatorpropclose', n_clicks=0),
+            html.Button('Actuator Sol Close', id='actuatorsolclose', n_clicks=0),
+            html.Button('Pressurant Valve Close', id='pressurantvalvclose', n_clicks=0),
+            html.Button('Fill Valve Close', id='ventvalveclose', n_clicks=0),
+            html.Button('All Valves Close', id='allvalveclose', n_clicks=0),
+            html.Button('All Valves Open', id='allvalveopen', n_clicks=0)]),
         html.Div('idle', id='emergencyholder'),
     ],
         className='pretty_container four columns'),
@@ -193,10 +194,7 @@ def read(n_intervals, n_clicks, m_clicks, j_clicks):
 
 
 @app.callback(
-    [Output(component_id='pres_graph', component_property='extendData'),
-     Output(component_id='fill_graph', component_property='extendData'),
-     Output(component_id='empty_graph', component_property='extendData'),
-     Output('pressoutput', 'children'),
+    [Output('pressoutput', 'children'),
      Output('filloutput', 'children'),
      Output('emptyoutput', 'children')],
     [Input(component_id='pressure', component_property='children'),
@@ -509,7 +507,7 @@ def override_commands(input1, n1_clicks, n2_clicks, n3_clicks, n4_clicks, n5_cli
     elif 'actuatorproppercentopen' in changed_id:
         actuator_prop_partial = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, input1)
         actuator_prop_partial.partial_open()
-        call = 'Actuator Prop Opened {} percent'.format(input1)
+        call = u'Actuator Prop Opened {} percent'.format(input1)
         return call
     elif 'actuatorsolopen' in changed_id:
         actuator_solenoid.open()
@@ -524,19 +522,19 @@ def override_commands(input1, n1_clicks, n2_clicks, n3_clicks, n4_clicks, n5_cli
         call = 'Vent Valve Opened'
         return call
     elif 'actuatorpropclose' in changed_id:
-        actuator_prop.open()
+        actuator_prop.close()
         call = 'Actuator Prop Closed'
         return call
     elif 'actuatorsolclose' in changed_id:
-        actuator_solenoid.open()
+        actuator_solenoid.close()
         call = 'Actuator Solenoid Closed'
         return call
     elif 'pressurantvalvclose' in changed_id:
-        fill_valve.open()
+        fill_valve.close()
         call = 'Pressurant Valve Closed'
         return call
     elif 'ventvalveclose' in changed_id:
-        vent_valve.open()
+        vent_valve.close()
         call = 'Vent Valve Closed'
         return call
     elif 'allvalveclose' in changed_id:

@@ -10,6 +10,7 @@ counter = 0
 
 
 def leak_test():
+    global input_flag
     time_duration = 86400
 
     # Data Frames for Saving
@@ -21,10 +22,15 @@ def leak_test():
     temperature_empty_time_list = ["time"]
 
     # Valve Definition and Classes
-    actuator_prop = Valve('Actuator Propellant Valve', 'P8_13', 'P8_13', 'Prop', 4, 10)
-    actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-    fill_valve = Valve('Fill Valve', 'P8_12', 0, 'Solenoid', 0, 0)
-    vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
+    actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
+    fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
+    vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
+
+    actuator_prop.open()
+    actuator_solenoid.open()
+    fill_valve.open()
+    vent_valve.open()
 
     # Pressure Sensor Definition and Classes
     pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
@@ -100,6 +106,7 @@ def leak_test():
     input("Press Enter to Begin Leak Test")
     print('Beginning Leak Test')
 
+    input_flag = 1
     time_start = time.time()
     wait_time = 600
     n = 0
@@ -143,7 +150,7 @@ def read_sensors(n, time_start, wait_time):
                                    'P9_14', 'P9_16', '000', '000', '000')
     temperature_empty_line = Sensor('temperature_empty_line', 'temperature',
                                     'P9_12', 'P9_14', 'P9_16', '000', '000', '000')
-    maximum_pressure = 645
+    maximum_pressure = 6000
     nominal_pressure = 500
 
     pressure_list = []
