@@ -88,7 +88,7 @@ class Valve:
             GPIO.output(self.pin0, GPIO.HIGH)
         else:
             dac = Adafruit_MCP4725.MCP4725(address=0x60, busnum=2)
-            percentage_calc = 3395
+            percentage_calc = 2731.7 * (105 / 100) + 663.29
             rounded_percentage = round(percentage_calc)
             dac.set_voltage(rounded_percentage)
         self.state = 'Open'
