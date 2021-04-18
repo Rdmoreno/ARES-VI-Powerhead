@@ -19,7 +19,7 @@ temperature_empty_time_list = ["time"]
 official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 20)
 actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
 fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
 vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
@@ -87,13 +87,6 @@ app.layout = html.Div([
             html.Div('idle', id='heliumfillresponse'),
             html.Div('idle', id='heliumfillresult'),
             html.Div('idle', id='coldflowready'),
-        ], className="pretty_container"),
-        html.Div([
-            html.H3('Valve State'),
-            html.Div('Actuator Propellant Valve: NOT SET', id='actuatorpropstate'),
-            html.Div('Actuator Solenoid Valve: NOT SET', id='actuatorsolstate'),
-            html.Div('Fill Solenoid Valve: NOT SET', id='fillstate'),
-            html.Div('Vent Solenoid Valve: NOT SET', id='ventstate'),
         ], className="pretty_container"),
         html.Div([
             html.H3('System State'),
@@ -179,7 +172,7 @@ def read(n_intervals, n_clicks, m_clicks, j_clicks):
     if n_clicks > 0 and m_clicks == 0:
 
         if 'openbutton' in changed_id:
-            actuator_prop.open()
+            actuator_prop.partial_open()
             print('Act prop opened')
             actuator_solenoid.open()
             print('Act Sol opened')
@@ -210,19 +203,6 @@ def read(n_intervals, n_clicks, m_clicks, j_clicks):
 def update_pressure_data(pressure, time_pres, temp_fill, time_fill, temp_empty,
                          time_empty, time_official, n_clicks, m_clicks, j_clicks):
     if n_clicks > 0 and j_clicks == 0:
-
-        #data_pres = (dict(x=[[time_pres]], y=[[pressure]]))
-        #data_fill = (dict(x=[[time_fill]], y=[[temp_fill]]))
-        #data_empty = (dict(x=[[time_empty]], y=[[temp_empty]]))
-
-        #if m_clicks > 0:
-        #    pressure_list.append(pressure)
-        #    pressure_time_list.append(time_pres)
-        #    temperature_fill_list.append(temp_fill)
-        #    temperature_fill_time_list.append(time_fill)
-        #    temperature_empty_list.append(temp_empty)
-        #    temperature_empty_time_list.append(time_empty)
-        #    official_time_list.append(time_official)
 
         pres_update = 'Current Pressure: {}'.format(pressure)
         fill_update = 'Temperature Fill: {}'.format(temp_fill)
@@ -300,25 +280,6 @@ def relief_pressure_check(pressure, n_clicks, m_clicks):
             return 'Ouput: {}'.format('Pressure has returned to nominal value')
         else:
             raise PreventUpdate
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
-    [Output('actuatorpropstate', 'children'),
-     Output('actuatorsolstate', 'children'),
-     Output('fillstate', 'children'),
-     Output('ventstate', 'children')],
-    [Input('startbutton', 'n_clicks')
-     ])
-def valve_state(n_clicks):
-    if n_clicks > 0:
-        act_prop_update = actuator_prop.get_state()
-        act_sol_update = actuator_solenoid.get_state()
-        fill_valve_update = fill_valve.get_state()
-        vent_valve_update = vent_valve.get_state()
-
-        return act_prop_update, act_sol_update, fill_valve_update, vent_valve_update
     else:
         raise PreventUpdate
 
@@ -408,7 +369,6 @@ def cold_flow_helium_fill_end(n_clicks, m_clicks, pressure):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'heliumfillbuttonend' in changed_id:
         vent_valve.close()
-        fill_valve.close()
         result = pressure
         return 'All Valves Closed: Pressure is {} psi'.format(result), 'Ready for Cold FLow'
     else:
@@ -473,7 +433,7 @@ def cleanup_procedure(n_clicks):
         print('Opening All Valves')
         actuator_prop.open()
         actuator_solenoid.open()
-        fill_valve.open()
+        fill_valve.close()
         vent_valve.open()
         call = ['True']
         return call

@@ -11,7 +11,7 @@ counter = 0
 
 def leak_test():
     global input_flag
-    time_duration = 86400
+    time_duration = 43200
 
     # Data Frames for Saving
     pressure_list = ["Pressure"]
@@ -22,7 +22,7 @@ def leak_test():
     temperature_empty_time_list = ["time"]
 
     # Valve Definition and Classes
-    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 100)
+    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 10)
     actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
     fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
     vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
@@ -118,11 +118,13 @@ def leak_test():
 
     print('done')
     print(time.time() - time_start)
-    input('Press Enter to Open Valves and Depressurize Tank')
-    actuator_prop.open()
+    input('Press Enter to Open Actuator at 10%')
+    actuator_prop.partial_open()
     actuator_solenoid.open()
-    fill_valve.open()
+
+    input('Press Enter to Open All Valves')
     vent_valve.open()
+    fill_valve.open()
 
     actuator_prop.get_state()
     actuator_solenoid.get_state()
