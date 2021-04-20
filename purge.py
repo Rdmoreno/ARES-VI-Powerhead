@@ -3,10 +3,11 @@ from valve import Valve
 
 
 # Valve Definition and Classes
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 20)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
-fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+
 
 actuator_prop.close()
 actuator_solenoid.close()

@@ -19,10 +19,10 @@ temperature_empty_time_list = ["time"]
 official_time_list = ["Official Time"]
 
 # # Valve Definition and Classes
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, 20)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_8', 0, 'solenoid', 0, 0)
-fill_valve = Valve('Fill Valve', 'P8_12', 0, 'solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_16', 0, 'solenoid', 0, 0)
+actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
+actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
+fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
@@ -127,11 +127,11 @@ app.layout = html.Div([
             html.Button('Actuator Prop Percent Open', id='actuatorproppercentopen', n_clicks=0),
             html.Button('Actuator Sol Open', id='actuatorsolopen', n_clicks=0),
             html.Button('Pressurant Valve Open', id='pressurantvalveopen', n_clicks=0),
-            html.Button('Fill Valve Open', id='ventvalveopen', n_clicks=0),
+            html.Button('Vent Valve Open', id='ventvalveopen', n_clicks=0),
             html.Button('Actuator Prop Close', id='actuatorpropclose', n_clicks=0),
             html.Button('Actuator Sol Close', id='actuatorsolclose', n_clicks=0),
             html.Button('Pressurant Valve Close', id='pressurantvalvclose', n_clicks=0),
-            html.Button('Fill Valve Close', id='ventvalveclose', n_clicks=0),
+            html.Button('Vent Valve Close', id='ventvalveclose', n_clicks=0),
             html.Button('All Valves Close', id='allvalveclose', n_clicks=0),
             html.Button('All Valves Open', id='allvalveopen', n_clicks=0)]),
         html.Div('idle', id='emergencyholder'),
@@ -172,10 +172,8 @@ def read(n_intervals, n_clicks, m_clicks, j_clicks):
     if n_clicks > 0 and m_clicks == 0:
 
         if 'openbutton' in changed_id:
-            actuator_prop.partial_open()
-            print('Act prop opened')
             actuator_solenoid.open()
-            print('Act Sol opened')
+            actuator_prop.partial_open()
 
         pres, time_pres = pressure_cold_flow.read_sensor()
         temp_fill, time_fill = temperature_fill_line.read_sensor()
@@ -256,7 +254,7 @@ def relief_pressure_check(pressure, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
         global counter
         # change the maximum pressure to 645 during actual experiment
-        maximum_pressure = 5000
+        maximum_pressure = 6000
         nominal_pressure = 500
 
         if pressure >= maximum_pressure:
@@ -307,8 +305,8 @@ def cold_flow_check(n_clicks):
         if not check_1 and check_2 and check_3 and check_4:
             return 'Check Unsuccessful: Check Valve Connections'
 
-        actuator_prop.close()
         actuator_solenoid.close()
+        actuator_prop.close()
         fill_valve.close()
         vent_valve.close()
 
@@ -352,7 +350,6 @@ def cold_flow_nitrogen_fill_end(n_clicks, m_clicks, pressure):
 def cold_flow_helium_fill(n_clicks, m_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'heliumfillbutton' in changed_id:
-        vent_valve.open()
         fill_valve.open()
         return 'Vent Valve and Pressurant Line Opened'
     else:
@@ -431,8 +428,8 @@ def cleanup_procedure(n_clicks):
     if 'finishexperiment' in changed_id:
         # global act_prop_state, act_sol_state, fill_state, vent_state
         print('Opening All Valves')
-        actuator_prop.open()
         actuator_solenoid.open()
+        actuator_prop.open()
         fill_valve.close()
         vent_valve.open()
         call = ['True']
@@ -461,10 +458,12 @@ def override_commands(input1, n1_clicks, n2_clicks, n3_clicks, n4_clicks, n5_cli
                       n9_clicks, n10_clicks, n11_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'actuatorpropopen' in changed_id:
+        actuator_solenoid.open()
         actuator_prop.open()
         call = 'Actuator Prop Opened'
         return call
     elif 'actuatorproppercentopen' in changed_id:
+        actuator_solenoid.open()
         actuator_prop_partial = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'Prop', 4, input1)
         actuator_prop_partial.partial_open()
         call = u'Actuator Prop Opened {} percent'.format(input1)
@@ -483,6 +482,7 @@ def override_commands(input1, n1_clicks, n2_clicks, n3_clicks, n4_clicks, n5_cli
         return call
     elif 'actuatorpropclose' in changed_id:
         actuator_prop.close()
+        actuator_solenoid.close()
         call = 'Actuator Prop Closed'
         return call
     elif 'actuatorsolclose' in changed_id:

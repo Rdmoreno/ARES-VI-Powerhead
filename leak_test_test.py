@@ -11,7 +11,7 @@ counter = 0
 
 def leak_test():
     global input_flag
-    time_duration = 43200
+    time_duration = 300
 
     # Data Frames for Saving
     pressure_list = ["Pressure"]
@@ -34,7 +34,7 @@ def leak_test():
 
     saved_data_combined = [pressure_list, pressure_time_list]
     export_data = zip_longest(*saved_data_combined, fillvalue='')
-    with open('leak_data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
+    with open('leak_data_data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
         wr = csv.writer(myfile)
         wr.writerows(export_data)
     myfile.close()
@@ -95,7 +95,7 @@ def leak_test():
 
     input_flag = 1
     time_start = time.time()
-    wait_time = 600
+    wait_time = 20
     n = 0
 
     while time.time() - time_start < time_duration:
@@ -173,7 +173,7 @@ def read_sensors(n, time_start, wait_time):
     saved_data_combined = [pressure_list, pressure_time_list]
     export_data = zip_longest(*saved_data_combined, fillvalue='')
 
-    with open('leak_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
+    with open('leak_data_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
         wr = csv.writer(myfile)
         wr.writerows(export_data)
     myfile.close()

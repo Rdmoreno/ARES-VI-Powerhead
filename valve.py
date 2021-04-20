@@ -30,8 +30,6 @@ class Valve:
         self.partial = givenPartial
         if self.type == 'solenoid':
             GPIO.setup(self.pin0, GPIO.OUT)
-        if self.type == 'prop':
-            GPIO.setup(self.pin0, GPIO.OUT)
 
     def close(self):
         """
@@ -63,7 +61,7 @@ class Valve:
         """
 
         t = time.process_time()
-        if 0 > self.partial > 105:
+        if self.partial > 106 or self.partial < 0:
             self.state = 'Partial Open Failed: Falls out of Range'
             pass
         elif self.type != 'solenoid':
