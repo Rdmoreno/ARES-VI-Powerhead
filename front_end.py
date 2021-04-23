@@ -26,7 +26,7 @@ vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
-                            'P9_16', '000', '001', '010')
+                            'P9_16', '000', '010', '100')
 
 # Temperature Sensor Definition and Classes
 temperature_fill_line = Sensor('temperature_fill_line', 'temperature', 'P9_12',
@@ -254,7 +254,7 @@ def relief_pressure_check(pressure, n_clicks, m_clicks):
     if n_clicks > 0 and m_clicks == 0:
         global counter
         # change the maximum pressure to 645 during actual experiment
-        maximum_pressure = 6000
+        maximum_pressure = 640
         nominal_pressure = 500
 
         if pressure >= maximum_pressure:

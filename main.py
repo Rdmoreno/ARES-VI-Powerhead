@@ -1,139 +1,133 @@
-import time
-import pandas as pd
 import csv
-from Adafruit_BBIO import GPIO
+import time
 from sensors import Sensor
 from valve import Valve
-from sensors import Sensor
-from Adafruit_I2C import Adafruit_I2C
-import numpy as np
+from itertools import zip_longest
+import threading
 
-# config-pin p9_17 spi_cs
-# config-pin p9_18 spi
-# config-pin p9_21 spi
-# config-pin p9_22 spi_sclk
-# config-pin p9_17 spi_cs; config-pin p9_18 spi; config-pin p9_21 spi; config-pin p9_22 spi_sclk
-
-# i2cdetect -y -r 0
-# i2cdetect -y -r 1
-
-GPIO.setup('P8_46', GPIO.OUT)
-GPIO.output('P8_46', GPIO.HIGH)
-
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
-actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
-fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+input_flag = 1
+counter = 0
 
 
-actuator_solenoid.open()
+def leak_test():
+    global input_flag
+    global counter
 
-for x in range(11):
-    i = 10*x
-    b = 'press Enter to percentage open {}'.format(i)
-    input(b)
-    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, i)
+    # Valve Definition and Classes
+    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
+    actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
+    fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
+    vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+
+    actuator_solenoid.open()
     actuator_prop.partial_open()
-b = 'press Enter to percentage open 105'
-input(b)
-actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 105)
-actuator_prop.partial_open()
-input('Press Enter to close')
-actuator_prop.close()
+    time.sleep(2)
+    fill_valve.open()
+    vent_valve.open()
+
+    # Pressure Sensor Definition and Classes
+    pressureall = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16', 'P9_16', '000', '010', '100')
+    pressure0 = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')
+    pressure2 = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16', 'P9_16', '010', '010', '010')
+    pressure4 = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16', 'P9_16', '100', '100', '100')
+
+    print('Welcome to the Team Daedalus: Leak Test')
+    input('Please Press Enter to Confirm Start')
+    print('Starting System Check')
+    print()
+    input("\nVerification Complete, Press Enter to Continue:\n")
+
+    print()
+    print('Closing All Valves')
+    actuator_solenoid.close()
+    actuator_prop.close()
+    fill_valve.close()
+    vent_valve.close()
+
+    print(actuator_prop.get_state())
+    print(actuator_solenoid.get_state())
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
+
+    input('Press Enter to Open filling valve')
+    print('Opening Fill Valve: Begin Filling Procedure')
+    input('Press Enter to begin filling and Enter again to end filling')
+    fill_valve.open()
+
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
+
+    print('Press Enter When Desired Pressure is Met')
+    time.sleep(3)
+    i = threading.Thread(target=get_input)
+    i.start()
+
+    maximum_pressure = 640
+    nominal_pressure = 500
+
+    while input_flag == 1:
+        a = pressure0.read_sensor()
+        b = pressure2.read_sensor()
+        c = pressure4.read_sensor()
+        e = pressureall.read_sensor()
+        d = [e[0], a[0], b[0], c[0]]
+
+        if e[0] >= maximum_pressure:
+            counter = counter + 1
+        else:
+            counter = 0
+
+        if counter >= 3:
+            time_relief = time.process_time()
+            vent_valve.open()
+            print('Pressure Exceeded Maximum: Opening Relief Valve')
+            print(time_relief)
+            while True:
+                pres_relief = pressureall.read_sensor()
+                if pres_relief[0] < nominal_pressure:
+                    time_relief_end = time.process_time()
+                    print('Closing Relief Valve')
+                    vent_valve.close()
+                    print(time_relief_end)
+                    break
+
+        print(d)
+        time.sleep(.2)
+    fill_valve.close()
+    vent_valve.close()
+    print(fill_valve.get_state())
+    print(vent_valve.get_state())
+
+    input('Press Enter to Open Actuator at 10%')
+    actuator_solenoid.open()
+    actuator_prop.partial_open()
+
+    input('Press Enter to Open Vent Valve')
+    vent_valve.open()
+
+    input('Enter all Other Valves')
+    vent_valve.close()
+    time.sleep(1)
+    fill_valve.open()
+    actuator_solenoid.open()
+    actuator_prop.open()
+
+    actuator_prop.get_state()
+    actuator_solenoid.get_state()
+    fill_valve.get_state()
+    vent_valve.get_state()
+    input('Press Enter to End and Close all valves')
+    vent_valve.close()
+    fill_valve.close()
+    actuator_solenoid.close()
+    actuator_prop.close()
 
 
-#actuator_solenoid.open()
-#input('Press Enter to Close')
-#actuator_solenoid.close()
-input('Press Enter to Open')
-fill_valve.open()
-input('Press Enter to Close')
-fill_valve.close()
-input('Press Enter to Open')
-vent_valve.open()
-input('Press Enter to Close')
-vent_valve.close()
-input('Press Enter to End')
-
-#pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
-#                            'P9_16', '000', '000', '000')
-
-#while True:
-#    a = pressure_cold_flow.read_sensor()
-#    print(a[0])
-#    print()
-#    input()
+def get_input():
+    global input_flag
+    input('')
+    input_flag = False
 
 
-
-#print(pressure_cold_flow.read_sensor())
-
-#for x in range(10):
-#    pressure_test = Sensor('sensor_test_class', 'temperature', 'P9_16', 'P9_16', 'P9_16', '000', '000', '000')
-#    stuff = pressure_test.read_sensor()
-#    temp = stuff[0]
-#    avg[x] = temp
-#print(np.sum(avg) / len(avg))
-
-
-#for y in range(3):
-#    print(pin_stuff[y])
-#    for x in range(8):
-#        pressure_test = Sensor('sensor_test_class', 'temperature', pin_stuff[y], pin_stuff[y], pin_stuff[y],
-#                               channel[x], channel[x], channel[x])
-#        stuff = pressure_test.read_sensor()
-#        list_val[x] = stuff[0]
-#        print()
-#    print()
-
-#channel = ['000', '001', '010', '100', '011', '101', '110', '111']
-
-#print('P9_16')
-#pin = 'P9_16'
-#for x in range(8):
-#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
-#                           channel[x], channel[x], channel[x])
-#    stuff = pressure_test.read_sensor()
-#    #list_val = stuff[0]
-#    #print(list_val)
-#    print()
-#print('P9_14')
-#pin = 'P9_14'
-#for x in range(8):
-#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
-#                           channel[x], channel[x], channel[x])
-#    stuff = pressure_test.read_sensor()
-#    #list_val = stuff[0]
-#    #print(list_val)
-#    print()
-#print('P9_12')
-#pin = 'P9_12'
-#for x in range(8):
-#    pressure_test = Sensor('sensor_test_class', 'temperature', pin, pin, pin,
-#                           channel[x], channel[x], channel[x])
-#    stuff = pressure_test.read_sensor()
-#    #list_val = stuff[0]
-#    #print(list_val)
-#    print()
-
-
-
-
-# Valve Definition and Classes
-# lox_main = Valve('LOX Propellant Valve', 'P8_13', 'Prop')
-# met_main = Valve('Methane Propellant Valve', 'P8_19', 'Prop')
-# lox_vent = Valve('LOX Vent Valve', 'P8_12', 'Solenoid')
-# met_vent = Valve('Methane Vent Valve', 'P8_14', 'Solenoid')
-# p_valve = Valve('Pressurant Valve', 'P8_16', 'Solenoid')
-
-#test_valve = Valve('Test Valve', 'P9_19', 'P9_20', 'actuator', 60, 50)
-#test_valve.close()
-#input('press enter to end')
-#test_valve.open()
-#input('press enter to end')
-#test_valve.partial_open()
-#input('press enter to end')
-
-# GPIO.setup("P8_46", GPIO.OUT)
-# GPIO.output("P8_46", GPIO.HIGH)
-# input("Press Enter to Continue")
+j = threading.Thread(target=leak_test)
+j.start()

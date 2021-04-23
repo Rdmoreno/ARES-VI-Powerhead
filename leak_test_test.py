@@ -11,7 +11,7 @@ counter = 0
 
 def leak_test():
     global input_flag
-    time_duration = 300
+    time_duration = 180
 
     # Data Frames for Saving
     pressure_list = ["Pressure"]
@@ -29,12 +29,12 @@ def leak_test():
     vent_valve.open()
 
     # Pressure Sensor Definition and Classes
-    pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
-                                'P9_16', '000', '000', '000')
+    pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
+                                'P9_16', '000', '010', '100')
 
     saved_data_combined = [pressure_list, pressure_time_list]
     export_data = zip_longest(*saved_data_combined, fillvalue='')
-    with open('leak_data_data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
+    with open('leak_data.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
         wr = csv.writer(myfile)
         wr.writerows(export_data)
     myfile.close()
@@ -131,12 +131,14 @@ def read_sensors(n, time_start, wait_time):
 
     # Valve Definition and Classes
     vent_valve = Valve('Vent Valve', 'P8_12', 0, 'Solenoid', 0, 0)
+    actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
+    actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
 
     # Pressure Sensor Definition and Classes
-    pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_12', 'P9_14',
-                                'P9_16', '000', '000', '000')
+    pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
+                                'P9_16', '000', '001', '010')
 
-    maximum_pressure = 6000
+    maximum_pressure = 640
     nominal_pressure = 500
 
     pressure_list = []
@@ -157,6 +159,8 @@ def read_sensors(n, time_start, wait_time):
         if counter >= 3:
             time_relief = time.process_time()
             vent_valve.open()
+            actuator_solenoid.open()
+            actuator_prop.partial_open()
             print('Pressure Exceeded Maximum: Opening Relief Valve')
             print(time_relief)
             while True:
@@ -165,6 +169,8 @@ def read_sensors(n, time_start, wait_time):
                     time_relief_end = time.process_time()
                     print('Closing Relief Valve')
                     vent_valve.close()
+                    actuator_solenoid.close()
+                    actuator_prop.close()
                     print(time_relief_end)
                     break
 
@@ -173,7 +179,7 @@ def read_sensors(n, time_start, wait_time):
     saved_data_combined = [pressure_list, pressure_time_list]
     export_data = zip_longest(*saved_data_combined, fillvalue='')
 
-    with open('leak_data_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
+    with open('leak_data.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
         wr = csv.writer(myfile)
         wr.writerows(export_data)
     myfile.close()
