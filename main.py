@@ -17,13 +17,11 @@ def leak_test():
     actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
     actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
     fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
-    vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+    vent_valve = Valve('Vent Valve', 'P8_45', 0, 'solenoid', 0, 0)
 
     actuator_solenoid.open()
     actuator_prop.partial_open()
     time.sleep(2)
-    fill_valve.open()
-    vent_valve.open()
 
     # Pressure Sensor Definition and Classes
     pressureall = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16', 'P9_16', '000', '010', '100')
@@ -62,7 +60,7 @@ def leak_test():
     i = threading.Thread(target=get_input)
     i.start()
 
-    maximum_pressure = 640
+    maximum_pressure = 10000
     nominal_pressure = 500
 
     while input_flag == 1:

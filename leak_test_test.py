@@ -4,6 +4,7 @@ from sensors import Sensor
 from valve import Valve
 from itertools import zip_longest
 import threading
+import Adafruit_BBIO.GPIO as GPIO
 
 input_flag = 1
 counter = 0
@@ -21,7 +22,7 @@ def leak_test():
     actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
     actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
     fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
-    vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+    vent_valve = Valve('Vent Valve', 'P8_45', 0, 'solenoid', 0, 0)
 
     actuator_solenoid.open()
     actuator_prop.open()

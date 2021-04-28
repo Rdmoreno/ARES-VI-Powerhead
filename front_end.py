@@ -8,6 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
+import Adafruit_BBIO.GPIO as GPIO
 
 # Data Frames for Saving
 pressure_list = ["Pressure"]
@@ -22,7 +23,7 @@ official_time_list = ["Official Time"]
 actuator_prop = Valve('Actuator Propellant Valve', 'P8_4', 'P8_4', 'prop', 4, 20)
 actuator_solenoid = Valve('Actuator Solenoid Valve', 'P8_4', 0, 'solenoid', 0, 0)
 fill_valve = Valve('Fill Valve', 'P8_8', 0, 'solenoid', 0, 0)
-vent_valve = Valve('Vent Valve', 'P8_12', 0, 'solenoid', 0, 0)
+vent_valve = Valve('Vent Valve', 'P8_45', 0, 'solenoid', 0, 0)
 
 # Pressure Sensor Definition and Classes
 pressure_cold_flow = Sensor('pressure_cold_flow', 'pressure', 'P9_16', 'P9_16',
